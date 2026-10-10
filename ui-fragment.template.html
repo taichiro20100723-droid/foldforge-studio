@@ -1,0 +1,303 @@
+<div id="foldforge-studio-root" aria-label="STLをチュールヒンジ折り構造へ変換するツール">
+  <style>
+    #foldforge-studio-root { color: var(--foreground); }
+    #foldforge-studio-root .ff-toolbar { display: flex; flex-wrap: wrap; gap: .7rem; align-items: end; }
+    #foldforge-studio-root .ff-toolbar .form-label { flex: 1 1 132px; min-width: 0; }
+    #foldforge-studio-root .ff-toolbar .ff-file { flex-basis: 210px; }
+    #foldforge-studio-root .ff-stage { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 1rem; margin-top: 1rem; }
+    #foldforge-studio-root .ff-pane { min-width: 0; }
+    #foldforge-studio-root canvas { display: block; width: 100%; height: 350px; touch-action: none; background: color-mix(in srgb, var(--muted) 28%, transparent); }
+    #foldforge-studio-root .ff-layout { width: 100%; height: 350px; background: color-mix(in srgb, var(--muted) 20%, transparent); }
+    #foldforge-studio-root .ff-layout svg { display: block; width: 100%; height: 100%; }
+    #foldforge-studio-root .ff-panel { fill: color-mix(in srgb, var(--viz-series-1) 18%, transparent); stroke: var(--border); stroke-width: .42; vector-effect: non-scaling-stroke; }
+    #foldforge-studio-root .ff-m { stroke: var(--viz-series-2); stroke-width: .7; vector-effect: non-scaling-stroke; }
+    #foldforge-studio-root .ff-v { stroke: var(--viz-series-3); stroke-width: .7; stroke-dasharray: 2 1.2; vector-effect: non-scaling-stroke; }
+    #foldforge-studio-root .ff-s { stroke: var(--viz-series-4); stroke-width: .9; stroke-dasharray: 1 1; vector-effect: non-scaling-stroke; }
+    #foldforge-studio-root .ff-safe { fill: none; stroke: var(--muted-foreground); stroke-width: .4; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
+    #foldforge-studio-root .ff-id { fill: var(--foreground); font-size: 3px; text-anchor: middle; dominant-baseline: central; }
+    #foldforge-studio-root .ff-caption { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin-bottom: .4rem; }
+    #foldforge-studio-root .ff-caption strong { font-weight: 500; }
+    #foldforge-studio-root .ff-downloads { margin-top: 1rem; }
+    #foldforge-studio-root .ff-status { min-height: 1.5rem; margin-top: .7rem; }
+    #foldforge-studio-root .ff-warnings { margin: .35rem 0 0; padding-left: 1.2rem; color: var(--muted-foreground); }
+    #foldforge-studio-root details { margin-top: .8rem; }
+    #foldforge-studio-root details > summary { cursor: pointer; }
+    #foldforge-studio-root .ff-advanced { margin-top: .7rem; }
+    #foldforge-studio-root .ff-range { display: grid; grid-template-columns: auto 1fr; gap: .6rem; align-items: center; margin-top: .5rem; }
+    @media (max-width: 620px) {
+      #foldforge-studio-root .ff-stage { grid-template-columns: 1fr; }
+      #foldforge-studio-root canvas, #foldforge-studio-root .ff-layout { height: 285px; }
+    }
+  </style>
+
+  <div class="ff-toolbar viz-controls">
+    <label class="form-label">作例
+      <select id="ff-example" class="form-select"></select>
+    </label>
+    <label class="form-label ff-file">自分のSTL
+      <input id="ff-file" class="form-control" type="file" accept=".stl,model/stl">
+    </label>
+    <label class="form-label">変換方式
+      <select id="ff-mode" class="form-select">
+        <option value="elastic">弾性モーフ（推奨）</option>
+        <option value="exact">厳密ネット</option>
+      </select>
+    </label>
+    <label class="form-label">完成最長辺
+      <input id="ff-size" class="form-control" type="number" min="40" max="220" step="5" value="150">
+    </label>
+    <label class="form-label">最大パネル数
+      <input id="ff-panels" class="form-control" type="number" min="20" max="260" step="10" value="120">
+    </label>
+    <button id="ff-run" type="button" class="btn btn-primary">変換する</button>
+  </div>
+
+  <details>
+    <summary>印刷・展開の詳細設定</summary>
+    <div class="ff-toolbar ff-advanced viz-controls">
+      <label class="form-label">上面ヒンジ隙間 mm
+        <input id="ff-gap" class="form-control" type="number" min="0.5" max="2.4" step="0.1" value="1.0">
+      </label>
+      <label class="form-label">板厚 mm
+        <input id="ff-thickness" class="form-control" type="number" min="0.6" max="2.4" step="0.2" value="0.8">
+      </label>
+      <label class="form-label">印刷停止高さ mm
+        <input id="ff-pause" class="form-control" type="number" min="0.2" max="1.2" step="0.2" value="0.4">
+      </label>
+      <label class="form-label">ベッド mm
+        <input id="ff-bed" class="form-control" type="number" min="120" max="400" step="1" value="256">
+      </label>
+      <label class="form-label">布固定余白 mm
+        <input id="ff-margin" class="form-control" type="number" min="10" max="50" step="1" value="30">
+      </label>
+      <label class="form-label">投影方向
+        <select id="ff-projection" class="form-select">
+          <option value="auto">自動</option><option value="xy">XY</option><option value="xz">XZ</option><option value="yz">YZ</option>
+        </select>
+      </label>
+      <label class="form-label">閉じたSTL
+        <select id="ff-front" class="form-select">
+          <option value="auto">自動で表側だけ</option><option value="true">必ず表側だけ</option><option value="false">全表面</option>
+        </select>
+      </label>
+      <label class="form-label">展開探索回数
+        <input id="ff-trials" class="form-control" type="number" min="8" max="160" step="8" value="48">
+      </label>
+    </div>
+  </details>
+
+  <div class="viz-grid" id="ff-stats" aria-live="polite">
+    <div class="card viz-stat"><span class="text-muted">パネル</span><span id="ff-stat-panels" class="viz-stat-value">—</span></div>
+    <div class="card viz-stat"><span class="text-muted">展開島 / 閉じ縁</span><span id="ff-stat-islands" class="viz-stat-value">—</span></div>
+    <div class="card viz-stat"><span class="text-muted">実完成サイズ</span><span id="ff-stat-size" class="viz-stat-value">—</span></div>
+  </div>
+
+  <div class="ff-stage">
+    <section class="ff-pane" aria-label="立体変形プレビュー">
+      <div class="ff-caption"><strong>平面 → 立体</strong><span id="ff-model-name" class="text-muted">猫マスク</span></div>
+      <canvas id="ff-canvas" width="700" height="430" role="img" aria-label="ドラッグで回転できる変形プレビュー"></canvas>
+      <div class="ff-range">
+        <output id="ff-fold-value">100%</output>
+        <input id="ff-fold" class="form-range" type="range" min="0" max="100" value="100" aria-label="立体化率">
+      </div>
+    </section>
+    <section class="ff-pane" aria-label="印刷配置プレビュー">
+      <div class="ff-caption"><strong>256mmベッド配置</strong><span class="text-muted">点線内＝布固定余白を除く領域</span></div>
+      <div id="ff-layout" class="ff-layout"></div>
+      <div class="viz-row text-small" aria-label="線の凡例"><span>実線：山</span><span>破線：谷</span><span>紫：同番号を閉じる</span></div>
+    </section>
+  </div>
+
+  <div id="ff-status" class="ff-status text-muted" aria-live="polite">作例を準備中…</div>
+  <ul id="ff-warnings" class="ff-warnings text-small"></ul>
+
+  <div class="ff-downloads viz-controls">
+    <button id="ff-zip" type="button" class="btn btn-primary" disabled>一括ZIP</button>
+    <button id="ff-stl" type="button" class="btn" disabled>印刷STL</button>
+    <button id="ff-target" type="button" class="btn" disabled>簡略化した目標STL</button>
+    <button id="ff-svg" type="button" class="btn" disabled>組立SVG</button>
+    <button id="ff-fold-file" type="button" class="btn" disabled>FOLD</button>
+    <button id="ff-json" type="button" class="btn btn-ghost" disabled>組立JSON</button>
+  </div>
+
+  <script>
+  /*__FOLDFORGE_CORE__*/
+  </script>
+  <script>
+  (function () {
+    "use strict";
+    const root = document.getElementById("foldforge-studio-root");
+    const F = globalThis.FoldForgeCore;
+    const $ = (id) => root.querySelector("#" + id);
+    const ui = {
+      example: $("ff-example"), file: $("ff-file"), mode: $("ff-mode"), size: $("ff-size"), panels: $("ff-panels"),
+      gap: $("ff-gap"), thickness: $("ff-thickness"), pause: $("ff-pause"), bed: $("ff-bed"), margin: $("ff-margin"),
+      projection: $("ff-projection"), front: $("ff-front"), trials: $("ff-trials"), run: $("ff-run"),
+      canvas: $("ff-canvas"), layout: $("ff-layout"), fold: $("ff-fold"), foldValue: $("ff-fold-value"),
+      status: $("ff-status"), warnings: $("ff-warnings"), name: $("ff-model-name"),
+      statPanels: $("ff-stat-panels"), statIslands: $("ff-stat-islands"), statSize: $("ff-stat-size"),
+      zip: $("ff-zip"), stl: $("ff-stl"), target: $("ff-target"), svg: $("ff-svg"), foldFile: $("ff-fold-file"), json: $("ff-json")
+    };
+    let sourceMesh = null, result = null, sourceName = "cat-mask";
+    let yaw = -0.55, pitch = 0.5, zoom = 1, dragging = false, last = [0,0];
+
+    for (const ex of F.EXAMPLES) {
+      const option = document.createElement("option");
+      option.value = ex.id; option.textContent = ex.name + " — " + ex.note;
+      ui.example.appendChild(option);
+    }
+
+    function options() {
+      const frontRaw = ui.front.value;
+      return {
+        mode: ui.mode.value,
+        targetSize: Number(ui.size.value), panelLimit: Number(ui.panels.value), gap: Number(ui.gap.value),
+        thickness: Number(ui.thickness.value), pauseHeight: Number(ui.pause.value), bedSize: Number(ui.bed.value),
+        fabricMargin: Number(ui.margin.value), projection: ui.projection.value,
+        frontOnly: frontRaw === "auto" ? "auto" : frontRaw === "true", trials: Number(ui.trials.value)
+      };
+    }
+
+    function setBusy(busy, message) {
+      ui.run.disabled = busy;
+      ui.run.textContent = busy ? "計算中…" : "変換する";
+      ui.status.textContent = message || "";
+    }
+
+    function enableDownloads(ok) {
+      for (const button of [ui.zip, ui.stl, ui.target, ui.svg, ui.foldFile, ui.json]) button.disabled = !ok;
+    }
+
+    function loadExample(id) {
+      const ex = F.EXAMPLES.find((x) => x.id === id) || F.EXAMPLES[0];
+      sourceMesh = ex.make(); sourceMesh.name = ex.id; sourceName = ex.id;
+      ui.name.textContent = ex.name;
+      if (id === "fuchikoma") ui.panels.value = "180";
+      else if (Number(ui.panels.value) > 150) ui.panels.value = "120";
+      run();
+    }
+
+    function run() {
+      if (!sourceMesh) return;
+      setBusy(true, "面を整理し、重なりの少ない展開を探索しています…"); enableDownloads(false);
+      setTimeout(function () {
+        try {
+          result = F.processMesh(sourceMesh, options()); result.name = sourceName;
+          renderAll(); enableDownloads(true);
+          const mode = result.options.mode === "exact" ? "厳密ネット" : "弾性モーフ";
+          ui.status.textContent = mode + "で変換完了。印刷STLは外枠なし、停止高さ" + result.options.pauseHeight.toFixed(1) + "mmです。";
+        } catch (error) {
+          console.error(error); result = null; enableDownloads(false);
+          ui.status.textContent = "変換できませんでした：" + error.message;
+        } finally { setBusy(false, ui.status.textContent); }
+      }, 30);
+    }
+
+    function renderAll() {
+      ui.statPanels.textContent = String(result.print.panels.length);
+      ui.statIslands.textContent = result.packed.islands.length + " / " + result.assembly.seams.length;
+      ui.statSize.textContent = result.assembly.summary.foldedLongestDimension.toFixed(1) + " mm";
+      ui.warnings.replaceChildren();
+      for (const warning of result.warnings) { const li = document.createElement("li"); li.textContent = warning; ui.warnings.appendChild(li); }
+      renderLayout(); draw3d();
+    }
+
+    function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+    function renderLayout() {
+      const bed = result.options.bedSize, margin = result.options.fabricMargin;
+      const path = (poly) => poly.map((p,i) => (i ? "L" : "M") + p[0].toFixed(2) + " " + (bed-p[1]).toFixed(2)).join(" ") + "Z";
+      const parts = ['<svg viewBox="0 0 '+bed+' '+bed+'" role="img" aria-label="印刷パネル配置">'];
+      parts.push('<rect class="ff-safe" x="'+margin+'" y="'+margin+'" width="'+(bed-2*margin)+'" height="'+(bed-2*margin)+'"/>');
+      for (const panel of result.print.panels) {
+        parts.push('<path class="ff-panel" d="'+path(panel.top)+'"/>');
+        if (result.print.panels.length <= 150) {
+          const c = panel.top.reduce((s,p)=>[s[0]+p[0],s[1]+p[1]],[0,0]).map((x)=>x/3);
+          parts.push('<text class="ff-id" x="'+c[0].toFixed(2)+'" y="'+(bed-c[1]).toFixed(2)+'">'+panel.face+'</text>');
+        }
+      }
+      for (const h of result.assembly.hinges) {
+        const p = result.packed.placements.get(h.parent); if (!p) continue;
+        const a=p.map.get(h.a), b=p.map.get(h.b); if(!a||!b)continue;
+        parts.push('<line class="ff-'+h.assignment.toLowerCase()+'" x1="'+a[0]+'" y1="'+(bed-a[1])+'" x2="'+b[0]+'" y2="'+(bed-b[1])+'"/>');
+      }
+      for (const s of result.assembly.seams) for (const fi of s.faces) {
+        const p=result.packed.placements.get(fi);if(!p)continue;const a=p.map.get(s.a),b=p.map.get(s.b);if(!a||!b)continue;
+        const m=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+        parts.push('<line class="ff-s" x1="'+a[0]+'" y1="'+(bed-a[1])+'" x2="'+b[0]+'" y2="'+(bed-b[1])+'"/>');
+        parts.push('<text class="ff-id" x="'+m[0]+'" y="'+(bed-m[1])+'">'+esc(s.id)+'</text>');
+      }
+      parts.push('</svg>'); ui.layout.innerHTML = parts.join("");
+    }
+
+    function canvasSize() {
+      const rect = ui.canvas.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w=Math.max(300,Math.round(rect.width*dpr)),h=Math.max(250,Math.round(rect.height*dpr));
+      if(ui.canvas.width!==w||ui.canvas.height!==h){ui.canvas.width=w;ui.canvas.height=h;}
+      return {w,h,dpr};
+    }
+    function css(name) { return getComputedStyle(root).getPropertyValue(name).trim(); }
+    function rotate(p) {
+      const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+      const x=cy*p[0]+sy*p[2], z=-sy*p[0]+cy*p[2];
+      return [x,cp*p[1]-sp*z,sp*p[1]+cp*z];
+    }
+    function draw3d() {
+      if(!result)return;const {w,h}=canvasSize(),ctx=ui.canvas.getContext("2d");ctx.clearRect(0,0,w,h);
+      const t=Number(ui.fold.value)/100, faces=[];
+      const targetScale=result.packed.scale;
+      for(const panel of result.print.panels){
+        const fi=panel.face,f=result.mesh.faces[fi],flat=result.packed.placements.get(fi).poly;
+        const pts=[];
+        for(let i=0;i<3;i++){
+          const a=[flat[i][0]-result.options.bedSize/2,flat[i][1]-result.options.bedSize/2,0];
+          const tv=result.mesh.vertices[f[i]].map((x)=>x*targetScale);
+          pts.push(rotate([a[0]*(1-t)+tv[0]*t,a[1]*(1-t)+tv[1]*t,tv[2]*t]));
+        }
+        faces.push({fi,pts,z:(pts[0][2]+pts[1][2]+pts[2][2])/3});
+      }
+      const extent=Math.max(result.options.bedSize,result.assembly.summary.foldedLongestDimension)*0.62;
+      const scale=Math.min(w,h)*zoom/Math.max(extent*2,1);
+      const project=(p)=>{const k=1/(1+p[2]/(extent*4));return[w/2+p[0]*scale*k,h/2-p[1]*scale*k];};
+      faces.sort((a,b)=>a.z-b.z);ctx.lineJoin="round";
+      for(const face of faces){const p=face.pts.map(project);ctx.beginPath();ctx.moveTo(p[0][0],p[0][1]);ctx.lineTo(p[1][0],p[1][1]);ctx.lineTo(p[2][0],p[2][1]);ctx.closePath();ctx.globalAlpha=.28;ctx.fillStyle=css("--viz-series-1")||css("--primary");ctx.fill();ctx.globalAlpha=.85;ctx.strokeStyle=css("--border");ctx.lineWidth=Math.max(1,window.devicePixelRatio||1);ctx.stroke();}
+      ctx.globalAlpha=1;
+    }
+
+    function slug() { return (sourceName || "model").replace(/[^a-zA-Z0-9_-]+/g,"_"); }
+    function download(data, name, type) {
+      const blob=data instanceof Blob?data:new Blob([data],{type:type||"application/octet-stream"});
+      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+    }
+    function textBytes(s){return new TextEncoder().encode(s);}
+    const crcTable=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+    function crc32(bytes){let c=0xffffffff;for(const b of bytes)c=crcTable[(c^b)&255]^(c>>>8);return(c^0xffffffff)>>>0;}
+    function zipStore(files){
+      const chunks=[],central=[];let offset=0;
+      const u16=(v)=>new Uint8Array([v&255,(v>>>8)&255]),u32=(v)=>new Uint8Array([v&255,(v>>>8)&255,(v>>>16)&255,(v>>>24)&255]);
+      const join=(arr)=>{const n=arr.reduce((s,x)=>s+x.length,0),o=new Uint8Array(n);let p=0;for(const x of arr){o.set(x,p);p+=x.length;}return o;};
+      for(const file of files){const name=textBytes(file.name),data=file.data instanceof Uint8Array?file.data:textBytes(file.data),crc=crc32(data);const local=join([u32(0x04034b50),u16(20),u16(0x800),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,data]);chunks.push(local);central.push(join([u32(0x02014b50),u16(20),u16(20),u16(0x800),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name]));offset+=local.length;}
+      const cd=join(central),end=join([u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(cd.length),u32(offset),u16(0)]);return join([...chunks,cd,end]);
+    }
+    function readme(){return "FoldForge Studio\n\n印刷: 0.20mm積層、"+result.options.pauseHeight.toFixed(1)+"mmで停止して15Dチュールを挟む。\n外枠はありません。ベッド端から約"+result.options.fabricMargin+"mmの布を磁石で固定します。\n方式: "+result.options.mode+"\nパネル: "+result.print.panels.length+"\n閉じ縁: "+result.assembly.seams.length+"\n";}
+
+    ui.example.addEventListener("change",()=>loadExample(ui.example.value));
+    ui.file.addEventListener("change",async()=>{const file=ui.file.files[0];if(!file)return;setBusy(true,"STLを読み込んでいます…");try{sourceMesh=F.parseSTL(await file.arrayBuffer());sourceMesh.name=file.name.replace(/\.stl$/i,"");sourceName=sourceMesh.name;ui.name.textContent=file.name;run();}catch(e){ui.status.textContent="読込失敗："+e.message;setBusy(false,ui.status.textContent);}});
+    ui.run.addEventListener("click",run);
+    ui.fold.addEventListener("input",()=>{ui.foldValue.textContent=ui.fold.value+"%";draw3d();});
+    ui.canvas.addEventListener("pointerdown",(e)=>{dragging=true;last=[e.clientX,e.clientY];ui.canvas.setPointerCapture(e.pointerId);});
+    ui.canvas.addEventListener("pointermove",(e)=>{if(!dragging)return;yaw+=(e.clientX-last[0])*.009;pitch=clampPitch(pitch+(e.clientY-last[1])*.009);last=[e.clientX,e.clientY];draw3d();});
+    ui.canvas.addEventListener("pointerup",()=>{dragging=false;});
+    ui.canvas.addEventListener("wheel",(e)=>{e.preventDefault();zoom=Math.max(.45,Math.min(2.8,zoom*Math.exp(-e.deltaY*.001)));draw3d();},{passive:false});
+    function clampPitch(x){return Math.max(-1.45,Math.min(1.45,x));}
+    window.addEventListener("resize",draw3d);
+    ui.stl.addEventListener("click",()=>download(result.exports.printSTL(),slug()+"_PRINT_0p8mm.stl","model/stl"));
+    ui.target.addEventListener("click",()=>download(result.exports.targetSTL(),slug()+"_TARGET_SIMPLIFIED.stl","model/stl"));
+    ui.svg.addEventListener("click",()=>download(result.exports.svg(),slug()+"_ASSEMBLY.svg","image/svg+xml"));
+    ui.foldFile.addEventListener("click",()=>download(result.exports.fold(),slug()+".fold","application/json"));
+    ui.json.addEventListener("click",()=>download(result.exports.assembly(),slug()+"_ASSEMBLY.json","application/json"));
+    ui.zip.addEventListener("click",()=>{const base=slug();const z=zipStore([{name:base+"_PRINT_0p8mm.stl",data:result.exports.printSTL()},{name:base+"_TARGET_SIMPLIFIED.stl",data:result.exports.targetSTL()},{name:base+"_ASSEMBLY.svg",data:result.exports.svg()},{name:base+".fold",data:result.exports.fold()},{name:base+"_ASSEMBLY.json",data:result.exports.assembly()},{name:"README_JA.txt",data:readme()}]);download(z,base+"_FoldForge.zip","application/zip");});
+
+    loadExample("cat");
+  })();
+  </script>
+</div>
