@@ -1,0 +1,1974 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FoldForge Studio — STL to Tulle Origami</title><style>
+:root{color-scheme:light dark;--background:#f6f5f2;--foreground:#1b1b1b;--card:#fff;--card-foreground:#1b1b1b;--muted:#e9e7e2;--muted-foreground:#666;--primary:#222;--primary-foreground:#fff;--secondary:#ece9e3;--secondary-foreground:#222;--accent:#e7e2d9;--accent-foreground:#111;--border:#9c9a94;--input:#aaa;--ring:#444;--viz-series-1:#df3f32;--viz-series-2:#e14336;--viz-series-3:#356cd3;--viz-series-4:#8a2be2;--viz-series-5:#258b5b;--viz-series-6:#cc8b12;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;--font-size-base:15px}
+@media(prefers-color-scheme:dark){:root{--background:#171717;--foreground:#eceae5;--card:#232323;--card-foreground:#eee;--muted:#2b2b2b;--muted-foreground:#aaa;--primary:#eee;--primary-foreground:#181818;--secondary:#303030;--secondary-foreground:#eee;--accent:#383838;--accent-foreground:#fff;--border:#626262;--input:#777;--ring:#ddd;--viz-series-1:#ff6354;--viz-series-2:#ff6858;--viz-series-3:#6e9cff;--viz-series-4:#b67cff;--viz-series-5:#5ec58d;--viz-series-6:#f0b84e}}
+*{box-sizing:border-box}body{margin:0;padding:20px;background:var(--background);color:var(--foreground);font-size:var(--font-size-base)}.viz-controls,.viz-row{display:flex;flex-wrap:wrap;gap:.65rem;align-items:center}.viz-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin-top:1rem}.card{background:var(--card);color:var(--card-foreground);border:1px solid var(--border);border-radius:10px;padding:.8rem}.viz-stat{display:flex;flex-direction:column;gap:.25rem}.viz-stat-value{font-size:1.28rem;font-weight:500}.text-muted{color:var(--muted-foreground)}.text-small{font-size:.82rem}.form-label{display:flex;flex-direction:column;gap:.3rem}.form-control,.form-select{width:100%;padding:.48rem .55rem;border:1px solid var(--input);border-radius:7px;background:var(--background);color:var(--foreground)}.form-range{width:100%}.btn{appearance:none;border:1px solid var(--border);border-radius:8px;padding:.52rem .72rem;background:var(--secondary);color:var(--secondary-foreground);cursor:pointer}.btn-primary{background:var(--primary);color:var(--primary-foreground);border-color:var(--primary)}.btn-ghost{background:transparent}.btn:disabled{opacity:.45;cursor:not-allowed}summary{padding:.45rem 0}output{font-variant-numeric:tabular-nums}
+</style></head><body><div id="foldforge-studio-root" aria-label="STLをチュールヒンジ折り構造へ変換するツール">
+  <style>
+    #foldforge-studio-root { color: var(--foreground); }
+    #foldforge-studio-root .ff-toolbar { display: flex; flex-wrap: wrap; gap: .7rem; align-items: end; }
+    #foldforge-studio-root .ff-toolbar .form-label { flex: 1 1 132px; min-width: 0; }
+    #foldforge-studio-root .ff-toolbar .ff-file { flex-basis: 210px; }
+    #foldforge-studio-root .ff-stage { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 1rem; margin-top: 1rem; }
+    #foldforge-studio-root .ff-pane { min-width: 0; }
+    #foldforge-studio-root canvas { display: block; width: 100%; height: 350px; touch-action: none; background: color-mix(in srgb, var(--muted) 28%, transparent); }
+    #foldforge-studio-root .ff-layout { width: 100%; height: 350px; background: color-mix(in srgb, var(--muted) 20%, transparent); }
+    #foldforge-studio-root .ff-layout svg { display: block; width: 100%; height: 100%; }
+    #foldforge-studio-root .ff-panel { fill: color-mix(in srgb, var(--viz-series-1) 18%, transparent); stroke: var(--border); stroke-width: .42; vector-effect: non-scaling-stroke; }
+    #foldforge-studio-root .ff-m { stroke: var(--viz-series-2); stroke-width: .7; vector-effect: non-scaling-stroke; }
+    #foldforge-studio-root .ff-v { stroke: var(--viz-series-3); stroke-width: .7; stroke-dasharray: 2 1.2; vector-effect: non-scaling-stroke; }
+    #foldforge-studio-root .ff-s { stroke: var(--viz-series-4); stroke-width: .9; stroke-dasharray: 1 1; vector-effect: non-scaling-stroke; }
+    #foldforge-studio-root .ff-safe { fill: none; stroke: var(--muted-foreground); stroke-width: .4; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
+    #foldforge-studio-root .ff-id { fill: var(--foreground); font-size: 3px; text-anchor: middle; dominant-baseline: central; }
+    #foldforge-studio-root .ff-caption { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin-bottom: .4rem; }
+    #foldforge-studio-root .ff-caption strong { font-weight: 500; }
+    #foldforge-studio-root .ff-downloads { margin-top: 1rem; }
+    #foldforge-studio-root .ff-status { min-height: 1.5rem; margin-top: .7rem; }
+    #foldforge-studio-root .ff-warnings { margin: .35rem 0 0; padding-left: 1.2rem; color: var(--muted-foreground); }
+    #foldforge-studio-root details { margin-top: .8rem; }
+    #foldforge-studio-root details > summary { cursor: pointer; }
+    #foldforge-studio-root .ff-advanced { margin-top: .7rem; }
+    #foldforge-studio-root .ff-range { display: grid; grid-template-columns: auto 1fr; gap: .6rem; align-items: center; margin-top: .5rem; }
+    @media (max-width: 620px) {
+      #foldforge-studio-root .ff-stage { grid-template-columns: 1fr; }
+      #foldforge-studio-root canvas, #foldforge-studio-root .ff-layout { height: 285px; }
+    }
+  </style>
+
+  <div class="ff-toolbar viz-controls">
+    <label class="form-label">作例
+      <select id="ff-example" class="form-select"></select>
+    </label>
+    <label class="form-label ff-file">自分のSTL
+      <input id="ff-file" class="form-control" type="file" accept=".stl,model/stl">
+    </label>
+    <label class="form-label">変換方式
+      <select id="ff-mode" class="form-select">
+        <option value="elastic">弾性モーフ（推奨）</option>
+        <option value="exact">厳密ネット</option>
+      </select>
+    </label>
+    <label class="form-label">完成最長辺
+      <input id="ff-size" class="form-control" type="number" min="40" max="220" step="5" value="150">
+    </label>
+    <label class="form-label">最大パネル数
+      <input id="ff-panels" class="form-control" type="number" min="20" max="260" step="10" value="120">
+    </label>
+    <button id="ff-run" type="button" class="btn btn-primary">変換する</button>
+  </div>
+
+  <details>
+    <summary>印刷・展開の詳細設定</summary>
+    <div class="ff-toolbar ff-advanced viz-controls">
+      <label class="form-label">上面ヒンジ隙間 mm
+        <input id="ff-gap" class="form-control" type="number" min="0.5" max="2.4" step="0.1" value="1.0">
+      </label>
+      <label class="form-label">板厚 mm
+        <input id="ff-thickness" class="form-control" type="number" min="0.6" max="2.4" step="0.2" value="0.8">
+      </label>
+      <label class="form-label">印刷停止高さ mm
+        <input id="ff-pause" class="form-control" type="number" min="0.2" max="1.2" step="0.2" value="0.4">
+      </label>
+      <label class="form-label">ベッド mm
+        <input id="ff-bed" class="form-control" type="number" min="120" max="400" step="1" value="256">
+      </label>
+      <label class="form-label">布固定余白 mm
+        <input id="ff-margin" class="form-control" type="number" min="10" max="50" step="1" value="30">
+      </label>
+      <label class="form-label">投影方向
+        <select id="ff-projection" class="form-select">
+          <option value="auto">自動</option><option value="xy">XY</option><option value="xz">XZ</option><option value="yz">YZ</option>
+        </select>
+      </label>
+      <label class="form-label">閉じたSTL
+        <select id="ff-front" class="form-select">
+          <option value="auto">自動で表側だけ</option><option value="true">必ず表側だけ</option><option value="false">全表面</option>
+        </select>
+      </label>
+      <label class="form-label">展開探索回数
+        <input id="ff-trials" class="form-control" type="number" min="8" max="160" step="8" value="48">
+      </label>
+    </div>
+  </details>
+
+  <div class="viz-grid" id="ff-stats" aria-live="polite">
+    <div class="card viz-stat"><span class="text-muted">パネル</span><span id="ff-stat-panels" class="viz-stat-value">—</span></div>
+    <div class="card viz-stat"><span class="text-muted">展開島 / 閉じ縁</span><span id="ff-stat-islands" class="viz-stat-value">—</span></div>
+    <div class="card viz-stat"><span class="text-muted">実完成サイズ</span><span id="ff-stat-size" class="viz-stat-value">—</span></div>
+  </div>
+
+  <div class="ff-stage">
+    <section class="ff-pane" aria-label="立体変形プレビュー">
+      <div class="ff-caption"><strong>平面 → 立体</strong><span id="ff-model-name" class="text-muted">猫マスク</span></div>
+      <canvas id="ff-canvas" width="700" height="430" role="img" aria-label="ドラッグで回転できる変形プレビュー"></canvas>
+      <div class="ff-range">
+        <output id="ff-fold-value">100%</output>
+        <input id="ff-fold" class="form-range" type="range" min="0" max="100" value="100" aria-label="立体化率">
+      </div>
+    </section>
+    <section class="ff-pane" aria-label="印刷配置プレビュー">
+      <div class="ff-caption"><strong>256mmベッド配置</strong><span class="text-muted">点線内＝布固定余白を除く領域</span></div>
+      <div id="ff-layout" class="ff-layout"></div>
+      <div class="viz-row text-small" aria-label="線の凡例"><span>実線：山</span><span>破線：谷</span><span>紫：同番号を閉じる</span></div>
+    </section>
+  </div>
+
+  <div id="ff-status" class="ff-status text-muted" aria-live="polite">作例を準備中…</div>
+  <ul id="ff-warnings" class="ff-warnings text-small"></ul>
+
+  <div class="ff-downloads viz-controls">
+    <button id="ff-zip" type="button" class="btn btn-primary" disabled>一括ZIP</button>
+    <button id="ff-stl" type="button" class="btn" disabled>印刷STL</button>
+    <button id="ff-target" type="button" class="btn" disabled>簡略化した目標STL</button>
+    <button id="ff-svg" type="button" class="btn" disabled>組立SVG</button>
+    <button id="ff-fold-file" type="button" class="btn" disabled>FOLD</button>
+    <button id="ff-json" type="button" class="btn btn-ghost" disabled>組立JSON</button>
+  </div>
+
+  <script>
+  (function (root, factory) {
+  "use strict";
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  root.FoldForgeCore = api;
+})(typeof globalThis !== "undefined" ? globalThis : this, function () {
+  "use strict";
+
+  const VERSION = "2.0.0";
+  const EPS = 1e-9;
+  const TAU = Math.PI * 2;
+
+  const add2 = (a, b) => [a[0] + b[0], a[1] + b[1]];
+  const sub2 = (a, b) => [a[0] - b[0], a[1] - b[1]];
+  const mul2 = (a, s) => [a[0] * s, a[1] * s];
+  const dot2 = (a, b) => a[0] * b[0] + a[1] * b[1];
+  const cross2 = (a, b) => a[0] * b[1] - a[1] * b[0];
+  const len2 = (a) => Math.hypot(a[0], a[1]);
+  const dist2 = (a, b) => len2(sub2(a, b));
+  const add3 = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+  const sub3 = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const mul3 = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+  const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const cross3 = (a, b) => [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0]
+  ];
+  const len3 = (a) => Math.hypot(a[0], a[1], a[2]);
+  const norm3 = (a) => {
+    const l = len3(a);
+    return l > EPS ? mul3(a, 1 / l) : [0, 0, 1];
+  };
+  const dist3 = (a, b) => len3(sub3(a, b));
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const edgeKey = (a, b) => (a < b ? a + ":" + b : b + ":" + a);
+  const pairKey = (a, b) => (a < b ? a + ":" + b : b + ":" + a);
+
+  function area2(poly) {
+    let s = 0;
+    for (let i = 0; i < poly.length; i++) s += cross2(poly[i], poly[(i + 1) % poly.length]);
+    return s * 0.5;
+  }
+
+  function triangleArea3(a, b, c) {
+    return 0.5 * len3(cross3(sub3(b, a), sub3(c, a)));
+  }
+
+  function triangleNormal(vertices, face) {
+    return norm3(cross3(sub3(vertices[face[1]], vertices[face[0]]), sub3(vertices[face[2]], vertices[face[0]])));
+  }
+
+  function bounds3(vertices) {
+    const lo = [Infinity, Infinity, Infinity];
+    const hi = [-Infinity, -Infinity, -Infinity];
+    for (const p of vertices) {
+      for (let k = 0; k < 3; k++) {
+        lo[k] = Math.min(lo[k], p[k]);
+        hi[k] = Math.max(hi[k], p[k]);
+      }
+    }
+    return { lo, hi, size: sub3(hi, lo) };
+  }
+
+  function bounds2(polys) {
+    const lo = [Infinity, Infinity];
+    const hi = [-Infinity, -Infinity];
+    for (const poly of polys) for (const p of poly) {
+      lo[0] = Math.min(lo[0], p[0]);
+      lo[1] = Math.min(lo[1], p[1]);
+      hi[0] = Math.max(hi[0], p[0]);
+      hi[1] = Math.max(hi[1], p[1]);
+    }
+    if (!Number.isFinite(lo[0])) return { lo: [0, 0], hi: [0, 0], size: [0, 0] };
+    return { lo, hi, size: sub2(hi, lo) };
+  }
+
+  function xorshift(seed) {
+    let x = (seed | 0) || 0x6d2b79f5;
+    return function () {
+      x ^= x << 13;
+      x ^= x >>> 17;
+      x ^= x << 5;
+      return (x >>> 0) / 4294967296;
+    };
+  }
+
+  function parseSTL(data) {
+    const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    let binary = false;
+    if (bytes.byteLength >= 84) {
+      const n = view.getUint32(80, true);
+      binary = 84 + n * 50 === bytes.byteLength;
+    }
+    const triangles = [];
+    if (binary) {
+      const count = view.getUint32(80, true);
+      let o = 84;
+      for (let i = 0; i < count; i++, o += 50) {
+        const tri = [];
+        for (let j = 0; j < 3; j++) {
+          const p = o + 12 + j * 12;
+          tri.push([view.getFloat32(p, true), view.getFloat32(p + 4, true), view.getFloat32(p + 8, true)]);
+        }
+        triangles.push(tri);
+      }
+    } else {
+      const text = new TextDecoder().decode(bytes);
+      const values = [];
+      const re = /\bvertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/g;
+      let m;
+      while ((m = re.exec(text))) values.push([Number(m[1]), Number(m[2]), Number(m[3])]);
+      for (let i = 0; i + 2 < values.length; i += 3) triangles.push([values[i], values[i + 1], values[i + 2]]);
+      if (!triangles.length) throw new Error("STLの三角形を読み取れませんでした");
+    }
+    return meshFromTriangles(triangles);
+  }
+
+  function meshFromTriangles(triangles, tolerance) {
+    const flat = triangles.flat();
+    if (!flat.length) throw new Error("空のメッシュです");
+    const b = bounds3(flat);
+    const diag = len3(b.size);
+    const tol = tolerance || Math.max(diag * 1e-6, 1e-7);
+    const vertices = [];
+    const buckets = new Map();
+    const faces = [];
+    function indexOf(p) {
+      const key = Math.round(p[0] / tol) + "," + Math.round(p[1] / tol) + "," + Math.round(p[2] / tol);
+      if (buckets.has(key)) return buckets.get(key);
+      const idx = vertices.length;
+      vertices.push([+p[0], +p[1], +p[2]]);
+      buckets.set(key, idx);
+      return idx;
+    }
+    const seen = new Set();
+    for (const tri of triangles) {
+      const f = tri.map(indexOf);
+      if (new Set(f).size < 3) continue;
+      const k = [...f].sort((a, b2) => a - b2).join(":");
+      if (seen.has(k)) continue;
+      if (triangleArea3(vertices[f[0]], vertices[f[1]], vertices[f[2]]) <= tol * tol) continue;
+      seen.add(k);
+      faces.push(f);
+    }
+    if (!faces.length) throw new Error("有効な三角形がありません");
+    return orientMesh({ vertices, faces });
+  }
+
+  function orientMesh(mesh) {
+    const faces = mesh.faces.map((f) => f.slice());
+    const owners = new Map();
+    for (let fi = 0; fi < faces.length; fi++) {
+      const f = faces[fi];
+      for (let e = 0; e < 3; e++) {
+        const a = f[e], b = f[(e + 1) % 3];
+        const k = edgeKey(a, b);
+        if (!owners.has(k)) owners.set(k, []);
+        owners.get(k).push({ fi, a, b });
+      }
+    }
+    const graph = Array.from({ length: faces.length }, () => []);
+    for (const list of owners.values()) if (list.length === 2) {
+      const x = list[0], y = list[1];
+      graph[x.fi].push({ other: y.fi, same: x.a === y.a && x.b === y.b });
+      graph[y.fi].push({ other: x.fi, same: x.a === y.a && x.b === y.b });
+    }
+    const flip = new Array(faces.length).fill(null);
+    const component = new Array(faces.length).fill(-1);
+    let comp = 0;
+    for (let s = 0; s < faces.length; s++) if (flip[s] === null) {
+      flip[s] = false;
+      component[s] = comp;
+      const q = [s];
+      for (let qi = 0; qi < q.length; qi++) {
+        const f = q[qi];
+        for (const e of graph[f]) {
+          const want = Boolean(flip[f] ^ e.same);
+          if (flip[e.other] === null) {
+            flip[e.other] = want;
+            component[e.other] = comp;
+            q.push(e.other);
+          }
+        }
+      }
+      comp++;
+    }
+    for (let i = 0; i < faces.length; i++) if (flip[i]) [faces[i][1], faces[i][2]] = [faces[i][2], faces[i][1]];
+    return { vertices: mesh.vertices.map((v) => v.slice()), faces, component, source: mesh.source || null, name: mesh.name || "mesh" };
+  }
+
+  function scaleMesh(mesh, targetSize) {
+    const b = bounds3(mesh.vertices);
+    const longest = Math.max(...b.size);
+    const scale = targetSize > 0 && longest > EPS ? targetSize / longest : 1;
+    const center = mul3(add3(b.lo, b.hi), 0.5);
+    const vertices = mesh.vertices.map((p) => mul3(sub3(p, center), scale));
+    return { ...mesh, vertices, inputScale: scale, targetSize };
+  }
+
+  function clustered(mesh, resolution) {
+    const b = bounds3(mesh.vertices);
+    const maxSize = Math.max(...b.size, EPS);
+    const cell = maxSize / resolution;
+    const sums = new Map();
+    const oldToKey = [];
+    const vertexComponent = new Array(mesh.vertices.length).fill(0);
+    for (let fi = 0; fi < mesh.faces.length; fi++) for (const v of mesh.faces[fi]) vertexComponent[v] = mesh.component ? mesh.component[fi] : 0;
+    for (let i = 0; i < mesh.vertices.length; i++) {
+      const p = mesh.vertices[i];
+      const key = vertexComponent[i] + "|" + Math.floor((p[0] - b.lo[0]) / cell) + "," + Math.floor((p[1] - b.lo[1]) / cell) + "," + Math.floor((p[2] - b.lo[2]) / cell);
+      oldToKey[i] = key;
+      if (!sums.has(key)) sums.set(key, [0, 0, 0, 0]);
+      const s = sums.get(key);
+      s[0] += p[0]; s[1] += p[1]; s[2] += p[2]; s[3]++;
+    }
+    const vertices = [];
+    const keyToNew = new Map();
+    for (const [key, s] of sums) {
+      keyToNew.set(key, vertices.length);
+      vertices.push([s[0] / s[3], s[1] / s[3], s[2] / s[3]]);
+    }
+    const faces = [];
+    const seen = new Set();
+    for (const f0 of mesh.faces) {
+      const f = f0.map((v) => keyToNew.get(oldToKey[v]));
+      if (new Set(f).size < 3) continue;
+      const key = [...f].sort((a, b2) => a - b2).join(":");
+      if (seen.has(key)) continue;
+      if (triangleArea3(vertices[f[0]], vertices[f[1]], vertices[f[2]]) < 1e-8) continue;
+      seen.add(key);
+      faces.push(f);
+    }
+    return faces.length ? orientMesh({ vertices, faces, source: mesh.source, name: mesh.name }) : mesh;
+  }
+
+  function meshArea(m) {
+    let a = 0;
+    for (const f of m.faces) a += triangleArea3(m.vertices[f[0]], m.vertices[f[1]], m.vertices[f[2]]);
+    return a;
+  }
+
+  function simplifyMesh(mesh, targetFaces) {
+    if (!targetFaces || mesh.faces.length <= targetFaces) return { ...mesh, simplification: { applied: false, originalFaces: mesh.faces.length } };
+    const origArea = meshArea(mesh);
+    let best = null;
+    const maxRes = Math.min(80, Math.max(8, Math.ceil(Math.cbrt(mesh.vertices.length) * 5)));
+    for (let r = 2; r <= maxRes; r++) {
+      const candidate = clustered(mesh, r);
+      if (!candidate.faces.length) continue;
+      const count = candidate.faces.length;
+      const overPenalty = count > targetFaces ? (count - targetFaces) * 1.15 : (targetFaces - count);
+      const componentPenalty = Math.max(0, Math.max(...candidate.component) - Math.max(...mesh.component)) * targetFaces;
+      // vertex clustering happily welds two opposite walls of a tube into one.
+      // reject any candidate that loses a big share of the true surface area.
+      const areaRatio = meshArea(candidate) / Math.max(origArea, EPS);
+      const areaPenalty = areaRatio < 0.74 ? (0.74 - areaRatio) * 12 * targetFaces : 0;
+      const score = overPenalty + componentPenalty + areaPenalty;
+      if (!best || score < best.score) best = { candidate, score, r };
+      if (count >= targetFaces * 0.92 && count <= targetFaces * 1.08) break;
+    }
+    const out = best ? best.candidate : mesh;
+    out.simplification = {
+      applied: out !== mesh,
+      originalFaces: mesh.faces.length,
+      outputFaces: out.faces.length,
+      gridResolution: best ? best.r : null,
+      method: "feature-safe vertex clustering"
+    };
+    return out;
+  }
+
+  function topology(mesh) {
+    const faceNormals = mesh.faces.map((f) => triangleNormal(mesh.vertices, f));
+    const faceAreas = mesh.faces.map((f) => triangleArea3(mesh.vertices[f[0]], mesh.vertices[f[1]], mesh.vertices[f[2]]));
+    const owners = new Map();
+    for (let fi = 0; fi < mesh.faces.length; fi++) {
+      const f = mesh.faces[fi];
+      for (let e = 0; e < 3; e++) {
+        const a = f[e], b = f[(e + 1) % 3];
+        const k = edgeKey(a, b);
+        if (!owners.has(k)) owners.set(k, []);
+        owners.get(k).push({ fi, a, b, localEdge: e });
+      }
+    }
+    const dualEdges = [];
+    const faceAdj = Array.from({ length: mesh.faces.length }, () => []);
+    let boundaryEdges = 0, nonmanifoldEdges = 0;
+    for (const [key, list] of owners) {
+      if (list.length === 1) { boundaryEdges++; continue; }
+      if (list.length !== 2) { nonmanifoldEdges++; continue; }
+      const a = list[0].a, b = list[0].b;
+      const length = dist3(mesh.vertices[a], mesh.vertices[b]);
+      const flatness = Math.abs(dot3(faceNormals[list[0].fi], faceNormals[list[1].fi]));
+      const edge = { key, f1: list[0].fi, f2: list[1].fi, a, b, length, flatness, owners: list };
+      dualEdges.push(edge);
+      faceAdj[edge.f1].push(edge);
+      faceAdj[edge.f2].push(edge);
+    }
+    const components = [];
+    const seen = new Array(mesh.faces.length).fill(false);
+    for (let s = 0; s < mesh.faces.length; s++) if (!seen[s]) {
+      const fs = [];
+      const q = [s]; seen[s] = true;
+      for (let i = 0; i < q.length; i++) {
+        const f = q[i]; fs.push(f);
+        for (const e of faceAdj[f]) {
+          const o = e.f1 === f ? e.f2 : e.f1;
+          if (!seen[o]) { seen[o] = true; q.push(o); }
+        }
+      }
+      components.push(fs);
+    }
+    return { faceNormals, faceAreas, owners, dualEdges, faceAdj, components, boundaryEdges, nonmanifoldEdges };
+  }
+
+  class DSU {
+    constructor(n) { this.p = Array.from({ length: n }, (_, i) => i); this.r = new Array(n).fill(0); }
+    find(x) { while (this.p[x] !== x) { this.p[x] = this.p[this.p[x]]; x = this.p[x]; } return x; }
+    union(a, b) { a = this.find(a); b = this.find(b); if (a === b) return false; if (this.r[a] < this.r[b]) [a, b] = [b, a]; this.p[b] = a; if (this.r[a] === this.r[b]) this.r[a]++; return true; }
+  }
+
+  function rootTriangle(mesh, fi) {
+    const f = mesh.faces[fi];
+    const a = mesh.vertices[f[0]], b = mesh.vertices[f[1]], c = mesh.vertices[f[2]];
+    const ab = dist3(a, b), ac = dist3(a, c), bc = dist3(b, c);
+    const x = (ac * ac - bc * bc + ab * ab) / Math.max(2 * ab, EPS);
+    const h = Math.sqrt(Math.max(0, ac * ac - x * x));
+    const map = new Map();
+    map.set(f[0], [0, 0]); map.set(f[1], [ab, 0]); map.set(f[2], [x, h]);
+    return { face: fi, map, poly: f.map((v) => map.get(v)) };
+  }
+
+  function attachTriangle(mesh, childFi, edge, parentPlacement) {
+    const child = mesh.faces[childFi];
+    const a = edge.a, b = edge.b;
+    const pa = parentPlacement.map.get(a), pb = parentPlacement.map.get(b);
+    if (!pa || !pb) throw new Error("展開木の共有辺が見つかりません");
+    const c = child.find((v) => v !== a && v !== b);
+    const pc3 = mesh.vertices[c];
+    const ra = dist3(pc3, mesh.vertices[a]);
+    const rb = dist3(pc3, mesh.vertices[b]);
+    const abv = sub2(pb, pa), L = len2(abv);
+    const u = mul2(abv, 1 / Math.max(L, EPS));
+    const x = (ra * ra - rb * rb + L * L) / Math.max(2 * L, EPS);
+    const h = Math.sqrt(Math.max(0, ra * ra - x * x));
+    const perp = [-u[1], u[0]];
+    const base = add2(pa, mul2(u, x));
+    const p1 = add2(base, mul2(perp, h));
+    const p2 = add2(base, mul2(perp, -h));
+    const pf = mesh.faces[parentPlacement.face];
+    const other = pf.find((v) => v !== a && v !== b);
+    const po = parentPlacement.map.get(other);
+    const sideParent = cross2(abv, sub2(po, pa));
+    const side1 = cross2(abv, sub2(p1, pa));
+    const chosen = sideParent * side1 <= 0 ? p1 : p2;
+    const map = new Map(); map.set(a, pa); map.set(b, pb); map.set(c, chosen);
+    return { face: childFi, map, poly: child.map((v) => map.get(v)) };
+  }
+
+  function lineIntersection(a, b, c, d) {
+    const r = sub2(b, a), s = sub2(d, c);
+    const den = cross2(r, s);
+    if (Math.abs(den) < EPS) return mul2(add2(b, c), 0.5);
+    return add2(a, mul2(r, cross2(sub2(c, a), s) / den));
+  }
+
+  function clipConvex(subject, clip) {
+    let out = subject.map((p) => p.slice());
+    let cp = clip;
+    if (area2(cp) < 0) cp = cp.slice().reverse();
+    for (let i = 0; i < cp.length && out.length; i++) {
+      const a = cp[i], b = cp[(i + 1) % cp.length];
+      const input = out; out = [];
+      for (let j = 0; j < input.length; j++) {
+        const p = input[j], q = input[(j + 1) % input.length];
+        const inp = cross2(sub2(b, a), sub2(p, a)) >= -1e-8;
+        const inq = cross2(sub2(b, a), sub2(q, a)) >= -1e-8;
+        if (inp && inq) out.push(q);
+        else if (inp && !inq) out.push(lineIntersection(p, q, a, b));
+        else if (!inp && inq) { out.push(lineIntersection(p, q, a, b)); out.push(q); }
+      }
+    }
+    return out;
+  }
+
+  function overlapArea(a, b) {
+    const ba = bounds2([a]), bb = bounds2([b]);
+    if (ba.hi[0] <= bb.lo[0] + 1e-7 || bb.hi[0] <= ba.lo[0] + 1e-7 || ba.hi[1] <= bb.lo[1] + 1e-7 || bb.hi[1] <= ba.lo[1] + 1e-7) return 0;
+    const clipped = clipConvex(a, b);
+    return clipped.length >= 3 ? Math.abs(area2(clipped)) : 0;
+  }
+
+  function evaluatePlacements(placements) {
+    let overlap = 0;
+    const values = [...placements.values()];
+    for (let i = 0; i < values.length; i++) for (let j = i + 1; j < values.length; j++) overlap += overlapArea(values[i].poly, values[j].poly);
+    const b = bounds2(values.map((p) => p.poly));
+    return { overlap, bbox: b, bboxArea: b.size[0] * b.size[1] };
+  }
+
+  function randomTree(componentFaces, edges, rng) {
+    const faceSet = new Set(componentFaces);
+    const candidates = edges.filter((e) => faceSet.has(e.f1) && faceSet.has(e.f2)).map((e) => {
+      const bend = 0.35 + 0.65 * e.flatness;
+      const jitter = 0.62 + 0.76 * rng();
+      return { edge: e, score: e.length * bend * jitter };
+    }).sort((a, b) => b.score - a.score);
+    const local = new Map(componentFaces.map((f, i) => [f, i]));
+    const dsu = new DSU(componentFaces.length);
+    const tree = [];
+    for (const x of candidates) if (dsu.union(local.get(x.edge.f1), local.get(x.edge.f2))) tree.push(x.edge);
+    return tree;
+  }
+
+  function placeTree(mesh, componentFaces, tree, faceAreas) {
+    const treeAdj = new Map(componentFaces.map((f) => [f, []]));
+    for (const e of tree) {
+      treeAdj.get(e.f1).push({ other: e.f2, edge: e });
+      treeAdj.get(e.f2).push({ other: e.f1, edge: e });
+    }
+    const root = componentFaces.reduce((a, b) => faceAreas[a] >= faceAreas[b] ? a : b);
+    const placements = new Map([[root, rootTriangle(mesh, root)]]);
+    const parent = new Map([[root, null]]);
+    const parentEdge = new Map();
+    const depth = new Map([[root, 0]]);
+    const q = [root];
+    for (let i = 0; i < q.length; i++) {
+      const f = q[i];
+      for (const x of treeAdj.get(f) || []) if (!placements.has(x.other)) {
+        placements.set(x.other, attachTriangle(mesh, x.other, x.edge, placements.get(f)));
+        parent.set(x.other, f); parentEdge.set(x.other, x.edge); depth.set(x.other, depth.get(f) + 1); q.push(x.other);
+      }
+    }
+    return { root, placements, parent, parentEdge, depth, treeAdj };
+  }
+
+  function splitTreeOverlaps(mesh, placed) {
+    const roots = [];
+    const placements = new Map();
+    const island = new Map();
+    const parent = new Map();
+    const parentEdge = new Map();
+    const depth = new Map();
+    const originalChildren = new Map();
+    for (const f of placed.placements.keys()) originalChildren.set(f, []);
+    for (const [child, par] of placed.parent) if (par !== null) originalChildren.get(par).push({ child, edge: placed.parentEdge.get(child) });
+    const queue = [{ face: placed.root, par: null, edge: null, islandId: 0 }];
+    roots.push(placed.root);
+    const islandFaces = [[]];
+    while (queue.length) {
+      const item = queue.shift();
+      let p;
+      if (item.par === null) p = rootTriangle(mesh, item.face);
+      else p = attachTriangle(mesh, item.face, item.edge, placements.get(item.par));
+      let id = item.islandId;
+      let conflict = false;
+      if (item.par !== null) {
+        for (const other of islandFaces[id]) {
+          if (other === item.par) continue;
+          if (overlapArea(p.poly, placements.get(other).poly) > 1e-7) { conflict = true; break; }
+        }
+      }
+      if (conflict) {
+        id = islandFaces.length; islandFaces.push([]); roots.push(item.face);
+        p = rootTriangle(mesh, item.face);
+        parent.set(item.face, null); depth.set(item.face, 0);
+      } else {
+        parent.set(item.face, item.par);
+        if (item.edge) parentEdge.set(item.face, item.edge);
+        depth.set(item.face, item.par === null ? 0 : depth.get(item.par) + 1);
+      }
+      placements.set(item.face, p); island.set(item.face, id); islandFaces[id].push(item.face);
+      for (const child of originalChildren.get(item.face) || []) queue.push({ face: child.child, par: item.face, edge: child.edge, islandId: id });
+    }
+    return { roots, placements, island, islandFaces, parent, parentEdge, depth };
+  }
+
+  function unfoldMesh(mesh, topo, trials, seed) {
+    const rng = xorshift(seed || 1337);
+    const all = [];
+    for (let ci = 0; ci < topo.components.length; ci++) {
+      const faces = topo.components[ci];
+      let best = null;
+      const attempts = Math.max(1, Math.min(trials || 32, faces.length < 8 ? 8 : 160));
+      for (let t = 0; t < attempts; t++) {
+        const tree = randomTree(faces, topo.dualEdges, rng);
+        const placed = placeTree(mesh, faces, tree, topo.faceAreas);
+        const ev = evaluatePlacements(placed.placements);
+        const treeKeys = new Set(tree.map((e) => pairKey(e.f1, e.f2)));
+        const seamLength = topo.dualEdges.filter((e) => (faces.includes(e.f1) && faces.includes(e.f2) && !treeKeys.has(pairKey(e.f1, e.f2)))).reduce((s, e) => s + e.length, 0);
+        const score = ev.overlap * 1e5 + ev.bboxArea * 0.002 + seamLength * 0.05;
+        if (!best || score < best.score) best = { ...placed, tree, eval: ev, score, seamLength };
+        if (ev.overlap < 1e-7 && t >= Math.min(6, attempts - 1)) break;
+      }
+      const split = best.eval.overlap > 1e-7 ? splitTreeOverlaps(mesh, best) : {
+        roots: [best.root], placements: best.placements,
+        island: new Map([...best.placements.keys()].map((f) => [f, 0])),
+        islandFaces: [[...best.placements.keys()]], parent: best.parent,
+        parentEdge: best.parentEdge, depth: best.depth
+      };
+      all.push({ component: ci, best, ...split });
+    }
+    return all;
+  }
+
+  function packIslands(unfolded, bedSize, fabricMargin, islandGap) {
+    const islands = [];
+    for (const comp of unfolded) for (let localId = 0; localId < comp.islandFaces.length; localId++) {
+      const faces = comp.islandFaces[localId];
+      const polys = faces.map((f) => comp.placements.get(f).poly);
+      const b = bounds2(polys);
+      islands.push({ comp, localId, faces, bbox: b, width: b.size[0], height: b.size[1] });
+    }
+    islands.sort((a, b) => Math.max(b.width, b.height) - Math.max(a.width, a.height));
+    const safe = Math.max(20, bedSize - 2 * fabricMargin);
+    const gap = islandGap || 6;
+    const maxItem = Math.max(...islands.map((x) => x.width), 1);
+    const sumWidth = islands.reduce((s, x) => s + x.width + gap, -gap);
+    let best = null;
+    for (let step = 0; step < 24; step++) {
+      const width = maxItem + (sumWidth - maxItem) * step / 23;
+      let x = 0, y = 0, rowH = 0, usedW = 0;
+      const pos = [];
+      for (const item of islands) {
+        if (x > 0 && x + item.width > width) { x = 0; y += rowH + gap; rowH = 0; }
+        pos.push([x, y]);
+        x += item.width + gap; rowH = Math.max(rowH, item.height); usedW = Math.max(usedW, x - gap);
+      }
+      const usedH = y + rowH;
+      const scale = Math.min(1, safe / Math.max(usedW, EPS), safe / Math.max(usedH, EPS));
+      const occupied = (usedW * scale) * (usedH * scale);
+      const score = scale * 1e6 - occupied * 0.001;
+      if (!best || score > best.score) best = { pos, usedW, usedH, scale, score };
+    }
+    const offset = [fabricMargin + (safe - best.usedW * best.scale) * 0.5, fabricMargin + (safe - best.usedH * best.scale) * 0.5];
+    const packed = new Map();
+    islands.forEach((item, i) => {
+      const base = best.pos[i];
+      for (const f of item.faces) {
+        const p = item.comp.placements.get(f);
+        const poly = p.poly.map((v) => [
+          offset[0] + (v[0] - item.bbox.lo[0] + base[0]) * best.scale,
+          offset[1] + (v[1] - item.bbox.lo[1] + base[1]) * best.scale
+        ]);
+        const transformedMap = new Map();
+        for (const [vertex, v] of p.map) transformedMap.set(vertex, [
+          offset[0] + (v[0] - item.bbox.lo[0] + base[0]) * best.scale,
+          offset[1] + (v[1] - item.bbox.lo[1] + base[1]) * best.scale
+        ]);
+        packed.set(f, { ...p, poly, meshFace: (item.comp.mesh ? null : null) || null, map: transformedMap, component: item.comp.component, island: item.localId, packScale: best.scale });
+      }
+    });
+    return { placements: packed, islands, scale: best.scale, bedSize, fabricMargin, safeSize: safe, used: [best.usedW * best.scale, best.usedH * best.scale] };
+  }
+
+  function insetTriangle(poly, distance) {
+    let p = poly.map((v) => v.slice());
+    if (area2(p) < 0) p.reverse();
+    const A = Math.abs(area2(p));
+    const per = dist2(p[0], p[1]) + dist2(p[1], p[2]) + dist2(p[2], p[0]);
+    const inradius = per > EPS ? 2 * A / per : 0;
+    const d = Math.min(Math.max(0, distance), inradius * 0.62);
+    const lines = [];
+    for (let i = 0; i < 3; i++) {
+      const a = p[i], b = p[(i + 1) % 3], u = mul2(sub2(b, a), 1 / Math.max(dist2(a, b), EPS));
+      const n = [-u[1], u[0]];
+      lines.push([add2(a, mul2(n, d)), add2(b, mul2(n, d))]);
+    }
+    const out = [];
+    for (let i = 0; i < 3; i++) {
+      const prev = lines[(i + 2) % 3], cur = lines[i];
+      out.push(lineIntersection(prev[0], prev[1], cur[0], cur[1]));
+    }
+    return { poly: out, usedDistance: d, inradius };
+  }
+
+  function addTri(tris, a, b, c) {
+    if (triangleArea3(a, b, c) > 1e-10) tris.push([a.slice(), b.slice(), c.slice()]);
+  }
+
+  // --- v2.0 panel solid -------------------------------------------------
+  // 4 layers.  L2 and L3 (the two layers touching the tulle) share ONE plan
+  // outline, so the fabric is never left resting on lower plastic with no upper
+  // plastic above it.  Mountain / valley clearance lives in L1 and L4 only.
+  // Long creases are castellated in antiphase with the neighbouring panel, so
+  // the grip line is a square wave and a peel crack cannot run straight.
+  function edgeKeyXY(a, b) {
+    const k = (p) => Math.round(p[0] * 1e4) + "," + Math.round(p[1] * 1e4);
+    const ka = k(a), kb = k(b);
+    return ka < kb ? ka + "|" + kb : kb + "|" + ka;
+  }
+
+  function panelProfile(poly, tags, opts, layer, cham, amp, sc) {
+    const n = poly.length;
+    const base = tags.map((t) => {
+      const mid = opts.mid * sc;
+      if (t.kind === "B") return 0;
+      if (t.kind === "M") return [mid, mid, mid, mid + opts.mTop][layer];
+      return [mid + opts.vBot, mid, mid, mid][layer];
+    });
+    const line = (ei, d) => {
+      const a = poly[ei], b = poly[(ei + 1) % n];
+      const L = Math.max(dist2(a, b), EPS);
+      const u = [(b[0] - a[0]) / L, (b[1] - a[1]) / L];
+      const nn = [-u[1], u[0]];
+      return { p: [a[0] + nn[0] * d, a[1] + nn[1] * d], u, nn, L };
+    };
+    const meet = (ei, di, ej, dj) => {
+      const A = line(ei, di), B = line(ej, dj);
+      const den = A.u[0] * (-B.u[1]) - A.u[1] * (-B.u[0]);
+      if (Math.abs(den) < 1e-9) return B.p.slice();
+      const rx = B.p[0] - A.p[0], ry = B.p[1] - A.p[1];
+      const t = (rx * (-B.u[1]) - ry * (-B.u[0])) / den;
+      return [A.p[0] + A.u[0] * t, A.p[1] + A.u[1] * t];
+    };
+    const pts = [];
+    for (let ei = 0; ei < n; ei++) {
+      const prev = (ei + n - 1) % n;
+      const cp = tags[prev].cells, cc = tags[ei].cells;
+      const dPrev = base[prev] + (cp.length ? amp * cp[cp.length - 1] : 0);
+      const dCur = base[ei] + (cc.length ? amp * cc[0] : 0);
+      const corner = meet(prev, dPrev, ei, dCur);
+      const a = poly[ei], b = poly[(ei + 1) % n], pa = poly[prev];
+      const l1 = Math.max(dist2(pa, corner), EPS), l2 = Math.max(dist2(corner, b), EPS);
+      const cc2 = Math.min(cham, 0.34 * l1, 0.34 * l2);
+      if (cc2 < 0.05) {
+        pts.push(corner.slice());
+        pts.push([corner[0] + (b[0] - a[0]) * 1e-5, corner[1] + (b[1] - a[1]) * 1e-5]);
+      } else {
+        const u1 = [(corner[0] - pa[0]) / l1, (corner[1] - pa[1]) / l1];
+        const u2 = [(b[0] - corner[0]) / l2, (b[1] - corner[1]) / l2];
+        pts.push([corner[0] - u1[0] * cc2, corner[1] - u1[1] * cc2]);
+        pts.push([corner[0] + u2[0] * cc2, corner[1] + u2[1] * cc2]);
+      }
+      const LN = line(ei, 0);
+      const cells = tags[ei].cells;
+      const w = Math.min(1.0, 0.30 * LN.L / Math.max(cells.length, 1));
+      for (let j = 0; j + 1 < cells.length; j++) {
+        const t = (j + 1) / cells.length;
+        const d0 = base[ei] + amp * cells[j], d1 = base[ei] + amp * cells[j + 1];
+        const px = poly[ei][0] + LN.u[0] * (t * LN.L), py = poly[ei][1] + LN.u[1] * (t * LN.L);
+        pts.push([px - LN.u[0] * w + LN.nn[0] * d0, py - LN.u[1] * w + LN.nn[1] * d0]);
+        pts.push([px + LN.u[0] * w + LN.nn[0] * d1, py + LN.u[1] * w + LN.nn[1] * d1]);
+      }
+    }
+    return pts;
+  }
+
+  function polySimple(P) {
+    const n = P.length;
+    if (n < 3) return false;
+    let s2 = 0;
+    for (let i = 0; i < n; i++) { const a = P[i], b = P[(i + 1) % n]; s2 += a[0] * b[1] - b[0] * a[1]; }
+    if (s2 <= 1e-6) return false;
+    const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    for (let i = 0; i < n; i++) {
+      const a = P[i], b = P[(i + 1) % n];
+      for (let j = i + 2; j < n; j++) {
+        if (i === 0 && j === n - 1) continue;
+        const c = P[j], d = P[(j + 1) % n];
+        const d1 = cr(a, b, c), d2 = cr(a, b, d), d3 = cr(c, d, a), d4 = cr(c, d, b);
+        if ((d1 > 1e-10) !== (d2 > 1e-10) && (d3 > 1e-10) !== (d4 > 1e-10)) return false;
+      }
+    }
+    return true;
+  }
+
+  function earclip2(P) {
+    const pts = P.map((p) => p.slice());
+    const idx = pts.map((_, i) => i);
+    const out = [];
+    const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const inside = (p, a, b, c) => cr(a, b, p) >= -1e-9 && cr(b, c, p) >= -1e-9 && cr(c, a, p) >= -1e-9;
+    let guard = 0;
+    while (idx.length > 3 && guard++ < 40000) {
+      let done = false;
+      for (let k = 0; k < idx.length; k++) {
+        const i0 = idx[(k + idx.length - 1) % idx.length], i1 = idx[k], i2 = idx[(k + 1) % idx.length];
+        const a = pts[i0], b = pts[i1], c = pts[i2];
+        if (cr(a, b, c) <= 1e-6) continue;
+        let bad = false;
+        for (const j of idx) { if (j === i0 || j === i1 || j === i2) continue; if (inside(pts[j], a, b, c)) { bad = true; break; } }
+        if (bad) continue;
+        out.push([i0, i1, i2]); idx.splice(k, 1); done = true; break;
+      }
+      if (!done) return null;
+    }
+    if (idx.length === 3) out.push([idx[0], idx[1], idx[2]]);
+    return out;
+  }
+
+  function pruneCollinear(Ps, tol) {
+    const n = Ps[0].length, keep = [];
+    for (let i = 0; i < n; i++) {
+      let real = false;
+      for (const P of Ps) {
+        const a = P[(i + n - 1) % n], b = P[i], c = P[(i + 1) % n];
+        const abx = b[0] - a[0], aby = b[1] - a[1];
+        const L = Math.hypot(abx, aby);
+        if (L < 1e-9) continue;
+        const d = Math.abs((abx / L) * (c[1] - b[1]) - (aby / L) * (c[0] - b[0]));
+        if (d > tol) { real = true; break; }
+      }
+      if (real) keep.push(i);
+    }
+    if (keep.length < 3) return Ps;
+    return Ps.map((P) => keep.map((i) => P[i]));
+  }
+
+  function stackSolid(slabs) {
+    const P0 = slabs[0].P, Pn = slabs[slabs.length - 1].P;
+    const f0 = earclip2(P0), fn = earclip2(Pn);
+    if (!f0 || !fn) return null;
+    const tris = [];
+    const zb = slabs[0].z0, zt = slabs[slabs.length - 1].z1;
+    for (const [a, b, c] of f0) tris.push([[P0[a][0], P0[a][1], zb], [P0[c][0], P0[c][1], zb], [P0[b][0], P0[b][1], zb]]);
+    for (const [a, b, c] of fn) tris.push([[Pn[a][0], Pn[a][1], zt], [Pn[b][0], Pn[b][1], zt], [Pn[c][0], Pn[c][1], zt]]);
+    const n = P0.length;
+    for (const sl of slabs) for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n, P = sl.P;
+      const A0 = [P[i][0], P[i][1], sl.z0], B0 = [P[j][0], P[j][1], sl.z0];
+      const A1 = [P[i][0], P[i][1], sl.z1], B1 = [P[j][0], P[j][1], sl.z1];
+      tris.push([A0, B0, B1]); tris.push([A0, B1, A1]);
+    }
+    for (let k = 0; k + 1 < slabs.length; k++) {
+      const P = slabs[k].P, Q = slabs[k + 1].P, z = slabs[k].z1;
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        const A = [P[i][0], P[i][1], z], B = [P[j][0], P[j][1], z];
+        const C = [Q[j][0], Q[j][1], z], D = [Q[i][0], Q[i][1], z];
+        const dAD = Math.abs(A[0] - D[0]) < 1e-9 && Math.abs(A[1] - D[1]) < 1e-9;
+        const dBC = Math.abs(B[0] - C[0]) < 1e-9 && Math.abs(B[1] - C[1]) < 1e-9;
+        if (dAD && dBC) continue;
+        if (dAD) tris.push([A, B, C]);
+        else if (dBC) tris.push([A, B, D]);
+        else { tris.push([A, B, C]); tris.push([A, C, D]); }
+      }
+    }
+    return tris;
+  }
+
+  const LADDER = [[0.85, 1.0, 1.0], [0.65, 1.0, 1.0], [0.50, 0.8, 1.0], [0.38, 0.55, 1.0],
+                  [0.30, 0, 1.0], [0.22, 0, 1.0], [0.30, 0, 0.9], [0.22, 0, 0.8], [0.16, 0, 0.7]];
+
+  function panelSolid(poly, tags, opts) {
+    let p = poly.map((v) => v.slice());
+    let t = tags.slice();
+    if (area2(p) < 0) {
+      p = p.slice().reverse();
+      const n = t.length;
+      t = t.map((_, i) => { const src = tags[(n - 2 - i + n) % n]; return { kind: src.kind, cells: src.cells.slice().reverse() }; });
+    }
+    for (let li = 0; li < LADDER.length; li++) {
+      const [cham, ampScale, sc] = LADDER[li];
+      const amp = opts.amp * ampScale;
+      const tg = t.map((x) => ({ kind: x.kind, cells: ampScale > 0 ? x.cells : [] }));
+      const Ps = [0, 1, 3].map((L) => panelProfile(p, tg, opts, L, cham, amp, sc));
+      const pr = pruneCollinear(Ps, 2e-4);
+      if (!pr.every(polySimple)) continue;
+      const mesh = stackSolid([{ P: pr[0], z0: 0, z1: opts.l1 },
+                               { P: pr[1], z0: opts.l1, z1: opts.l3 },
+                               { P: pr[2], z0: opts.l3, z1: opts.thickness }]);
+      if (mesh) return { triangles: mesh, top: pr[2], lower: pr[0], waist: pr[1], ladder: li };
+    }
+    return null;
+  }
+
+  function buildPrintMesh(packed, options, hingeInfo, adjPairs) {
+    const triangles = [];
+    const panels = [];
+    const dropped = [];
+    const gap = options.gap == null ? 1.0 : options.gap;
+    const mid = gap / 2;
+    const opts = {
+      mid, mTop: 1.10, vBot: 0.45, thickness: options.thickness,
+      l1: options.thickness / 4, l3: options.thickness * 3 / 4,
+      amp: options.serrationAmp == null ? 0.30 : options.serrationAmp
+    };
+    // crease direction lookup: mountain / valley from the 3D fold angle sign
+    const dirOf = new Map();
+    if (hingeInfo) for (const h of hingeInfo) dirOf.set(h.key, h.kind);
+    const minArea = options.minPanelArea == null ? 6 : options.minPanelArea;
+    const pitch = options.serrationPitch == null ? 6 : options.serrationPitch;
+    const minEdge = options.serrationMinEdge == null ? 9 : options.serrationMinEdge;
+
+    // --- minimum-clearance solver -------------------------------------
+    // Adjacent panels get their clearance from the crease inset.  Non-adjacent
+    // panels can still collide because a non-developable target crowds the flat
+    // layout; wherever the INSET outlines come closer than minClear, both
+    // panels are inset a little more until they clear.
+    const extraInset = new Map();
+    (function () {
+      const list = [...packed.placements.entries()];
+      list.forEach(([f]) => extraInset.set(f, 0));
+      const minClear = 0.85;
+      const step = 1.2, cell = 9;
+      const insetOutline = (poly, d) => {
+        const n = poly.length;
+        const out = [];
+        const lines = [];
+        for (let i = 0; i < n; i++) {
+          const A = poly[i], B = poly[(i + 1) % n];
+          const L = Math.max(dist2(A, B), EPS);
+          const u = [(B[0] - A[0]) / L, (B[1] - A[1]) / L];
+          const nn = [-u[1], u[0]];
+          lines.push([[A[0] + nn[0] * d, A[1] + nn[1] * d], u]);
+        }
+        for (let i = 0; i < n; i++) {
+          const [p0, u0] = lines[(i + n - 1) % n], [p1, u1] = lines[i];
+          const den = u0[0] * (-u1[1]) - u0[1] * (-u1[0]);
+          if (Math.abs(den) < 1e-9) { out.push(p1.slice()); continue; }
+          const rx = p1[0] - p0[0], ry = p1[1] - p0[1];
+          const t = (rx * (-u1[1]) - ry * (-u1[0])) / den;
+          out.push([p0[0] + u0[0] * t, p0[1] + u0[1] * t]);
+        }
+        return out;
+      };
+      const sampleOf = (poly) => {
+        const P = [];
+        for (let i = 0; i < poly.length; i++) {
+          const A = poly[i], B = poly[(i + 1) % poly.length];
+          const L = dist2(A, B), k = Math.max(1, Math.round(L / step));
+          for (let j = 0; j < k; j++) P.push([A[0] + (B[0] - A[0]) * j / k, A[1] + (B[1] - A[1]) * j / k]);
+        }
+        return P;
+      };
+      for (let pass = 0; pass < 22; pass++) {
+        const amp0 = opts.amp;
+        const samples = list.map(([f, pl]) => sampleOf(insetOutline(pl.poly, Math.max(0.25, mid + (extraInset.get(f) || 0) - amp0))));
+        const grid = new Map();
+        samples.forEach((P, i) => P.forEach((pt) => {
+          const k = Math.floor(pt[0] / cell) + ":" + Math.floor(pt[1] / cell);
+          if (!grid.has(k)) grid.set(k, []);
+          grid.get(k).push([i, pt]);
+        }));
+        const need = new Array(list.length).fill(0);
+        let worst = 0;
+        for (const [k, items] of grid) {
+          const gp = k.split(":").map(Number);
+          const near = [];
+          for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+            const o = grid.get((gp[0] + dx) + ":" + (gp[1] + dy)); if (o) near.push(...o);
+          }
+          for (const [i, A] of items) for (const [j, B] of near) {
+            if (i === j) continue;
+            // adjacent pairs are included too: the inset outlines are the real plastic
+            const d = Math.hypot(A[0] - B[0], A[1] - B[1]);
+            if (d >= minClear) continue;
+            const def = (minClear - d) / 2;
+            if (def > need[i]) need[i] = def;
+            if (def > need[j]) need[j] = def;
+            if (def > worst) worst = def;
+          }
+        }
+        if (worst < 0.01) break;
+        list.forEach(([f], i) => { if (need[i] > 0) extraInset.set(f, (extraInset.get(f) || 0) + need[i] * 0.8); });
+      }
+    })();
+
+    let globalExtra = 0;
+    const banned = new Set();
+    let triangles2 = null, panels2 = null, dropped2 = null;
+    for (let attempt = 0; attempt < 9; attempt++) {
+    triangles2 = []; panels2 = []; dropped2 = [];
+    for (const [face, placement] of packed.placements) {
+      const poly = placement.poly;
+      if (banned.has(face)) { dropped2.push({ face, area: 0, reason: "overlap" }); continue; }
+      const A = Math.abs(area2(poly));
+      let per = 0;
+      for (let i = 0; i < poly.length; i++) per += dist2(poly[i], poly[(i + 1) % poly.length]);
+      const inradius = per > EPS ? 2 * A / per : 0;
+      if (A < minArea || inradius < mid + globalExtra + (extraInset.get(face) || 0) + opts.vBot + 0.55) { dropped2.push({ face, area: A, inradius }); continue; }
+      const n = poly.length;
+      const tags = [];
+      const vid = new Array(n).fill(null);
+      if (placement.map) {
+        for (const [mv, xy] of placement.map) {
+          for (let k = 0; k < n; k++) {
+            if (vid[k] === null && Math.abs(xy[0] - poly[k][0]) < 1e-6 && Math.abs(xy[1] - poly[k][1]) < 1e-6) { vid[k] = mv; break; }
+          }
+        }
+      }
+      for (let i = 0; i < n; i++) {
+        const a = poly[i], b = poly[(i + 1) % n];
+        const va = vid[i], vb = vid[(i + 1) % n];
+        const kind = (va != null && vb != null)
+          ? (dirOf.get(face + "#" + Math.min(va, vb) + "-" + Math.max(va, vb)) || "B")
+          : (dirOf.get(face + "#" + i) || "B");
+        const L = dist2(a, b);
+        const cells = [];
+        if (kind !== "B" && L >= minEdge) {
+          const k = Math.max(2, Math.round(L / pitch));
+          // the two owners of a crease traverse it in opposite vertex order,
+          // so this flag is automatically opposite -> antiphase castellation
+          const fwd = (va == null || vb == null) ? true : (va < vb);
+          for (let j = 0; j < k; j++) {
+            const jk = fwd ? j : (k - 1 - j);
+            let sgn = jk % 2 === 0 ? 1 : -1;
+            if (!fwd) sgn = -sgn;
+            cells.push(sgn);
+          }
+        }
+        tags.push({ kind, cells });
+      }
+      const solid = panelSolid(poly, tags, { ...opts, mid: mid + globalExtra + (extraInset.get(face) || 0) });
+      if (!solid) { dropped2.push({ face, area: A, reason: "clearance" }); continue; }
+      triangles2.push(...solid.triangles);
+      panels2.push({ face, placement, top: solid.top, lower: solid.lower, waist: solid.waist, ladder: solid.ladder });
+    }
+    // verify the real plastic outlines actually clear each other
+    const target = 0.80;
+    let worst = Infinity;
+    const hard = [];
+    {
+      const cell = 8, grid = new Map();
+      panels2.forEach((pn, i) => {
+        for (const outline of [pn.lower, pn.waist, pn.top]) {
+          for (let k = 0; k < outline.length; k++) {
+            const a = outline[k], b = outline[(k + 1) % outline.length];
+            const L = dist2(a, b), m = Math.max(1, Math.round(L / 0.35));
+            for (let q = 0; q < m; q++) {
+              const pt = [a[0] + (b[0] - a[0]) * q / m, a[1] + (b[1] - a[1]) * q / m];
+              const kk = Math.floor(pt[0] / cell) + ":" + Math.floor(pt[1] / cell);
+              if (!grid.has(kk)) grid.set(kk, []);
+              grid.get(kk).push([i, pt]);
+            }
+          }
+        }
+      });
+      for (const [kk, items] of grid) {
+        const gp = kk.split(":").map(Number);
+        const near = [];
+        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+          const o = grid.get((gp[0] + dx) + ":" + (gp[1] + dy)); if (o) near.push(...o);
+        }
+        for (const [i, A2] of items) for (const [j, B2] of near) {
+          if (i === j) continue;
+          const d = Math.hypot(A2[0] - B2[0], A2[1] - B2[1]);
+          if (d < worst) worst = d;
+          if (d < 0.30) {
+            const ai = Math.abs(area2(panels2[i].placement.poly));
+            const aj = Math.abs(area2(panels2[j].placement.poly));
+            hard.push(ai <= aj ? panels2[i].face : panels2[j].face);
+          }
+        }
+      }
+    }
+    if (!(worst < target - 0.02) || !panels2.length) { triangles2.minClearance = worst; break; }
+    if (attempt >= 4 && hard.length) { for (const f of hard) banned.add(f); }
+    else globalExtra += (target - worst) / 2 + 0.02;
+    }
+    return { triangles: triangles2, panels: panels2, dropped: dropped2, globalExtra, minClearance: triangles2 ? triangles2.minClearance : null };
+  }
+
+  function signedFoldAngle(mesh, topo, parent, child, edge) {
+    const n1 = topo.faceNormals[parent], n2 = topo.faceNormals[child];
+    const pf = mesh.faces[parent];
+    let a = edge.a, b = edge.b;
+    for (let i = 0; i < 3; i++) if (pf[i] === edge.b && pf[(i + 1) % 3] === edge.a) { a = edge.b; b = edge.a; break; }
+    const axis = norm3(sub3(mesh.vertices[b], mesh.vertices[a]));
+    return Math.atan2(dot3(axis, cross3(n1, n2)), clamp(dot3(n1, n2), -1, 1));
+  }
+
+  function assemblyData(mesh, topo, unfolded, packed, options) {
+    const retained = new Map();
+    const hinges = [];
+    for (const comp of unfolded) {
+      for (const [child, par] of comp.parent) if (par !== null) {
+        const e = comp.parentEdge.get(child);
+        const angle = signedFoldAngle(mesh, topo, par, child, e);
+        const assignment = angle >= 0 ? "M" : "V";
+        const item = { parent: par, child, a: e.a, b: e.b, angleRadians: angle, angleDegrees: angle * 180 / Math.PI, assignment, depth: comp.depth.get(child), component: comp.component, island: comp.island.get(child) };
+        hinges.push(item); retained.set(pairKey(par, child), item);
+      }
+    }
+    const seams = [];
+    let seamNo = 1;
+    for (const e of topo.dualEdges) if (!retained.has(pairKey(e.f1, e.f2))) {
+      seams.push({ id: "S" + String(seamNo++).padStart(2, "0"), faces: [e.f1, e.f2], a: e.a, b: e.b, length: e.length });
+    }
+    const steps = [];
+    const maxDepth = hinges.reduce((m, h) => Math.max(m, h.depth), 0);
+    for (let d = 1; d <= maxDepth; d++) {
+      const hs = hinges.filter((h) => h.depth === d);
+      if (hs.length) steps.push({ step: steps.length + 1, type: "fold", depth: d, hinges: hs.map((h) => ({ faces: [h.parent, h.child], assignment: h.assignment, angleDegrees: h.angleDegrees })) });
+    }
+    if (seams.length) steps.push({ step: steps.length + 1, type: "close-seams", seams: seams.map((s) => s.id) });
+    return {
+      generator: "FoldForge Studio " + VERSION,
+      units: "mm",
+      settings: options,
+      summary: { panels: mesh.faces.length, hinges: hinges.length, seams: seams.length, islands: packed.islands.length, foldedLongestDimension: options.targetSize * packed.scale },
+      hinges, seams, steps
+    };
+  }
+
+  function jacobiEigenSymmetric3(matrix) {
+    const a = matrix.map((row) => row.slice());
+    const v = [[1,0,0],[0,1,0],[0,0,1]];
+    for (let iter = 0; iter < 32; iter++) {
+      let p = 0, q = 1, max = Math.abs(a[0][1]);
+      for (const pair of [[0,2],[1,2]]) if (Math.abs(a[pair[0]][pair[1]]) > max) { p = pair[0]; q = pair[1]; max = Math.abs(a[p][q]); }
+      if (max < 1e-12) break;
+      const phi = 0.5 * Math.atan2(2 * a[p][q], a[q][q] - a[p][p]);
+      const c = Math.cos(phi), s = Math.sin(phi);
+      for (let k = 0; k < 3; k++) {
+        const apk = a[p][k], aqk = a[q][k];
+        a[p][k] = c * apk - s * aqk; a[q][k] = s * apk + c * aqk;
+      }
+      for (let k = 0; k < 3; k++) {
+        const akp = a[k][p], akq = a[k][q];
+        a[k][p] = c * akp - s * akq; a[k][q] = s * akp + c * akq;
+      }
+      for (let k = 0; k < 3; k++) {
+        const vkp = v[k][p], vkq = v[k][q];
+        v[k][p] = c * vkp - s * vkq; v[k][q] = s * vkp + c * vkq;
+      }
+    }
+    return [0,1,2].map((i) => ({ value: a[i][i], vector: norm3([v[0][i],v[1][i],v[2][i]]) })).sort((x,y) => x.value - y.value);
+  }
+
+  function projectionBasis(mesh, topo, requested) {
+    if (requested === "xy") return { u:[1,0,0], v:[0,1,0], n:[0,0,1], kind:"XY" };
+    if (requested === "xz") return { u:[1,0,0], v:[0,0,1], n:[0,-1,0], kind:"XZ" };
+    if (requested === "yz") return { u:[0,1,0], v:[0,0,1], n:[1,0,0], kind:"YZ" };
+    let avg = [0,0,0], total = 0;
+    for (let i=0;i<mesh.faces.length;i++) { avg = add3(avg, mul3(topo.faceNormals[i], topo.faceAreas[i])); total += topo.faceAreas[i]; }
+    avg = total > EPS ? mul3(avg, 1/total) : avg;
+    let n;
+    if (len3(avg) > 0.18) n = norm3(avg);
+    else {
+      const c = mesh.vertices.reduce((s,p)=>add3(s,p),[0,0,0]).map((x)=>x/mesh.vertices.length);
+      const cov = [[0,0,0],[0,0,0],[0,0,0]];
+      for(const p of mesh.vertices){const d=sub3(p,c);for(let i=0;i<3;i++)for(let j=0;j<3;j++)cov[i][j]+=d[i]*d[j];}
+      n = jacobiEigenSymmetric3(cov)[0].vector;
+    }
+    const helper = Math.abs(n[2]) < 0.85 ? [0,0,1] : [0,1,0];
+    const u = norm3(cross3(helper,n)), v = norm3(cross3(n,u));
+    return { u,v,n,kind:"AUTO" };
+  }
+
+  // --- v2.0: panels keep their TRUE 3D size; a rigid-body relaxation places
+  // them so every shared crease sits at the target gap.  The old version used a
+  // raw orthographic projection, which shrank steep faces into slivers and let
+  // near-silhouette faces overlap (measured minimum gap 0.00 mm on some models).
+  function isoTriangle(A, B, C) {
+    const ab = len3(sub3(B, A)), ac = len3(sub3(C, A)), bc = len3(sub3(C, B));
+    const x = ab > EPS ? (ab * ab + ac * ac - bc * bc) / (2 * ab) : 0;
+    const y2 = ac * ac - x * x;
+    return [[0, 0], [ab, 0], [x, Math.sqrt(Math.max(0, y2))]];
+  }
+
+  function kabsch2(src, dst) {
+    const cs = [0, 0], cd = [0, 0], n = src.length;
+    for (let i = 0; i < n; i++) { cs[0] += src[i][0]; cs[1] += src[i][1]; cd[0] += dst[i][0]; cd[1] += dst[i][1]; }
+    cs[0] /= n; cs[1] /= n; cd[0] /= n; cd[1] /= n;
+    let sxy = 0, sxx = 0;
+    for (let i = 0; i < n; i++) {
+      const ax = src[i][0] - cs[0], ay = src[i][1] - cs[1];
+      const bx = dst[i][0] - cd[0], by = dst[i][1] - cd[1];
+      sxx += ax * bx + ay * by; sxy += ax * by - ay * bx;
+    }
+    const th = Math.atan2(sxy, sxx);
+    return { theta: th, cs, cd };
+  }
+
+  function poseApply(pose, p) {
+    const c = Math.cos(pose.theta), s2 = Math.sin(pose.theta);
+    return [pose.x + c * p[0] - s2 * p[1], pose.y + s2 * p[0] + c * p[1]];
+  }
+
+  function elasticLayout(mesh, topo, options) {
+    const basis = projectionBasis(mesh, topo, options.projection);
+    let facingSign = 1;
+    const signed = topo.faceNormals.reduce((s2, n, i) => s2 + dot3(n, basis.n) * topo.faceAreas[i], 0);
+    if (signed < 0) facingSign = -1;
+    const closedLike = topo.boundaryEdges === 0;
+    const frontOnly = options.frontOnly === true || (options.frontOnly === "auto" && closedLike);
+    const thr = options.frontThreshold == null ? 0.08 : options.frontThreshold;
+
+    const selected = [];
+    for (let fi = 0; fi < mesh.faces.length; fi++) {
+      const f = mesh.faces[fi];
+      const proj = f.map((vi) => [dot3(mesh.vertices[vi], basis.u), dot3(mesh.vertices[vi], basis.v)]);
+      const facing = facingSign * dot3(topo.faceNormals[fi], basis.n);
+      if (frontOnly && facing < thr) continue;
+      if (topo.faceAreas[fi] < 1e-7) continue;
+      const A = mesh.vertices[f[0]], B = mesh.vertices[f[1]], C = mesh.vertices[f[2]];
+      const local = isoTriangle(A, B, C);          // true edge lengths, never projected
+      const k = kabsch2(local, proj);
+      selected.push({
+        face: fi, local, facing,
+        pose: { theta: k.theta, x: k.cd[0] - (Math.cos(k.theta) * k.cs[0] - Math.sin(k.theta) * k.cs[1]),
+                y: k.cd[1] - (Math.sin(k.theta) * k.cs[0] + Math.cos(k.theta) * k.cs[1]) }
+      });
+    }
+    if (!selected.length) throw new Error("選択した投影方向では有効な表面を抽出できません");
+    // one sheet = one connected patch.  Front-only extraction of a closed mesh
+    // can break into several disconnected patches even inside one shell, and a
+    // patch that is not connected to the rest cannot share the same fabric.
+    const sel = new Set(selected.map((x) => x.face));
+    const label = new Map();
+    let nLab = 0;
+    for (const f0 of sel) {
+      if (label.has(f0)) continue;
+      const lab = nLab++;
+      const q = [f0]; label.set(f0, lab);
+      for (let i = 0; i < q.length; i++) {
+        for (const e of topo.faceAdj[q[i]]) {
+          const o = e.f1 === q[i] ? e.f2 : e.f1;
+          if (sel.has(o) && !label.has(o)) { label.set(o, lab); q.push(o); }
+        }
+      }
+    }
+    const patchArea = new Map();
+    for (const f of sel) patchArea.set(label.get(f), (patchArea.get(label.get(f)) || 0) + topo.faceAreas[f]);
+    let bestPatch = null, bestA = -1;
+    for (const [c, a] of patchArea) if (a > bestA) { bestA = a; bestPatch = c; }
+    const shellCount = patchArea.size;
+    for (let i = selected.length - 1; i >= 0; i--) if (label.get(selected[i].face) !== bestPatch) selected.splice(i, 1);
+    const totalArea = topo.faceAreas.reduce((a, b) => a + b, 0);
+    const keptArea = selected.reduce((a, x) => a + topo.faceAreas[x.face], 0);
+
+    const idx = new Map(selected.map((x, i) => [x.face, i]));
+    const world = (i) => selected[i].local.map((p) => poseApply(selected[i].pose, p));
+
+    // shared-vertex correspondences for every crease between selected faces
+    const links = [];
+    for (const e of topo.dualEdges) {
+      if (!idx.has(e.f1) || !idx.has(e.f2)) continue;
+      const i1 = idx.get(e.f1), i2 = idx.get(e.f2);
+      const l1 = mesh.faces[e.f1].map((v, k2) => [v, k2]);
+      const l2 = mesh.faces[e.f2].map((v, k2) => [v, k2]);
+      const c = [];
+      for (const [v, k1] of l1) { const m = l2.find((z) => z[0] === v); if (m) c.push([k1, m[1]]); }
+      if (c.length === 2) {
+        let th = 0;
+        try { th = Math.abs(signedFoldAngle(mesh, topo, e.f1, e.f2, e)); } catch (err) { th = 0; }
+        const k = 1 / Math.max(Math.cos(Math.min(th, 2.44) / 2), 0.35);
+        links.push({ i1, i2, c, widen: Math.min(1 + (k - 1) * 0.35, 1.45) });
+      }
+    }
+
+    const gap = Math.max(0.4, options.gap == null ? 1.0 : options.gap);
+    // relaxation runs in mesh units; convert the metric gap later
+    const meshLongest = (() => { const b = bounds3(mesh.vertices); return Math.max(b.size[0], b.size[1], b.size[2]) || 1; })();
+    const gapLocal = gap * meshLongest / Math.max(options.targetSize, EPS);
+
+    const iters = Math.max(0, options.relaxIterations | 0);
+    for (let it = 0; it < iters; it++) {
+      const dx = selected.map(() => [0, 0]);
+      const dth = selected.map(() => 0);
+      const wsum = selected.map(() => 0);
+      for (const L of links) {
+        const w1 = world(L.i1), w2 = world(L.i2);
+        const a1 = w1[L.c[0][0]], b1 = w1[L.c[1][0]];
+        const a2 = w2[L.c[0][1]], b2 = w2[L.c[1][1]];
+        const ma = [(a1[0] + a2[0]) / 2, (a1[1] + a2[1]) / 2];
+        const mb = [(b1[0] + b2[0]) / 2, (b1[1] + b2[1]) / 2];
+        let ux = mb[0] - ma[0], uy = mb[1] - ma[1];
+        const ul = Math.hypot(ux, uy) || 1; ux /= ul; uy /= ul;
+        const nx = -uy, ny = ux;
+        const c1 = [(w1[0][0] + w1[1][0] + w1[2][0]) / 3, (w1[0][1] + w1[1][1] + w1[2][1]) / 3];
+        const c2 = [(w2[0][0] + w2[1][0] + w2[2][0]) / 3, (w2[0][1] + w2[1][1] + w2[2][1]) / 3];
+        const s1 = Math.sign((c1[0] - ma[0]) * nx + (c1[1] - ma[1]) * ny) || 1;
+        const s2s = -s1;
+        const half = gapLocal * (L.widen || 1) / 2;
+        for (const [i, pts, sgn] of [[L.i1, [[a1, L.c[0][0]], [b1, L.c[1][0]]], s1],
+                                    [L.i2, [[a2, L.c[0][1]], [b2, L.c[1][1]]], s2s]]) {
+          const cc = i === L.i1 ? c1 : c2;
+          for (const [p, k2] of pts) {
+            const tx = (sgn > 0 ? ma[0] + nx * half : ma[0] - nx * half);
+            const ty = (sgn > 0 ? ma[1] + ny * half : ma[1] - ny * half);
+            const base = (p === (i === L.i1 ? a1 : a2)) ? [tx, ty]
+              : [(sgn > 0 ? mb[0] + nx * half : mb[0] - nx * half),
+                 (sgn > 0 ? mb[1] + ny * half : mb[1] - ny * half)];
+            const ex = base[0] - p[0], ey = base[1] - p[1];
+            dx[i][0] += ex; dx[i][1] += ey;
+            const rx = p[0] - cc[0], ry = p[1] - cc[1];
+            const r2 = rx * rx + ry * ry;
+            if (r2 > EPS) dth[i] += (rx * ey - ry * ex) / r2;
+            wsum[i] += 1;
+          }
+        }
+      }
+      const relax = 0.55;
+      for (let i = 0; i < selected.length; i++) {
+        if (!wsum[i]) continue;
+        selected[i].pose.x += relax * dx[i][0] / wsum[i];
+        selected[i].pose.y += relax * dx[i][1] / wsum[i];
+        selected[i].pose.theta += relax * dth[i] / wsum[i];
+      }
+    }
+
+    // normalise the finished sheet to exactly targetSize (capped by the bed)
+    const polysRaw = selected.map((x, i) => world(i));
+    const rawBounds = bounds2(polysRaw);
+    const safe = Math.max(20, options.bedSize - 2 * options.fabricMargin);
+    const longest = Math.max(rawBounds.size[0], rawBounds.size[1], EPS);
+    const scale = Math.min(options.targetSize, safe) / longest;
+    const offset = [options.fabricMargin + (safe - rawBounds.size[0] * scale) / 2,
+                    options.fabricMargin + (safe - rawBounds.size[1] * scale) / 2];
+    const transform = (p) => [offset[0] + (p[0] - rawBounds.lo[0]) * scale,
+                              offset[1] + (p[1] - rawBounds.lo[1]) * scale];
+
+    const placements = new Map();
+    selected.forEach((item, i) => {
+      const w = polysRaw[i].map(transform);
+      placements.set(item.face, {
+        face: item.face, poly: w, meshFace: mesh.faces[item.face].slice(),
+        map: new Map(mesh.faces[item.face].map((vi, k2) => [vi, w[k2]])),
+        component: mesh.component[item.face], island: 0, packScale: scale
+      });
+    });
+    return {
+      placements,
+      islands: [{ faces: selected.map((x) => x.face), width: rawBounds.size[0], height: rawBounds.size[1] }],
+      scale: 1, bedSize: options.bedSize, fabricMargin: options.fabricMargin, safeSize: safe,
+      used: [rawBounds.size[0] * scale, rawBounds.size[1] * scale], basis, frontOnly,
+      selectedFaces: new Set(selected.map((x) => x.face)),
+      trueSize: true, shellCount, areaRetention: keptArea / Math.max(totalArea, EPS)
+    };
+  }
+
+  function elasticAssemblyData(mesh, topo, packed, options) {
+    const hinges=[];
+    const selected=packed.selectedFaces;
+    const faceDepth=new Map();
+    const centerFace=[...selected].reduce((best,f)=>topo.faceAreas[f]>topo.faceAreas[best]?f:best,[...selected][0]);
+    faceDepth.set(centerFace,0);const q=[centerFace];
+    for(let i=0;i<q.length;i++){const f=q[i];for(const e of topo.faceAdj[f]){const o=e.f1===f?e.f2:e.f1;if(selected.has(o)&&!faceDepth.has(o)){faceDepth.set(o,faceDepth.get(f)+1);q.push(o);}}}
+    for(const e of topo.dualEdges) if(selected.has(e.f1)&&selected.has(e.f2)){
+      const angle=signedFoldAngle(mesh,topo,e.f1,e.f2,e);
+      hinges.push({parent:e.f1,child:e.f2,a:e.a,b:e.b,angleRadians:angle,angleDegrees:angle*180/Math.PI,assignment:angle>=0?"M":"V",depth:Math.max(faceDepth.get(e.f1)||0,faceDepth.get(e.f2)||0),component:mesh.component[e.f1],island:0});
+    }
+    const maxDepth=Math.max(0,...hinges.map((h)=>h.depth));
+    const steps=[{step:1,type:"pre-form",instruction:"布を張ったまま中央から軽く押し、全体を目標曲面へ慣らす"}];
+    for(let d=1;d<=maxDepth;d+=2)steps.push({step:steps.length+1,type:"shape-ring",depthRange:[d,Math.min(maxDepth,d+1)],instruction:"中心から外側へ、同じ深さのヒンジを少しずつ曲げる"});
+    steps.push({step:steps.length+1,type:"set-shape",instruction:"必要箇所を磁石・糸・仮治具で固定し、左右対称を整える"});
+    return {generator:"FoldForge Studio "+VERSION,units:"mm",mode:"elastic-morph",settings:options,summary:{panels:selected.size,hinges:hinges.length,seams:0,islands:1,foldedLongestDimension:options.targetSize*packed.scale},hinges,seams:[],steps};
+  }
+
+  function meshAudit(triangles) {
+    const counts = new Map();
+    let degenerate = 0, volume = 0;
+    const pts = [];
+    function key(p) { return p.map((x) => Math.round(x * 1e5)).join(","); }
+    for (const tri of triangles) {
+      const [a, b, c] = tri; pts.push(a, b, c);
+      if (triangleArea3(a, b, c) < 1e-9) degenerate++;
+      volume += dot3(a, cross3(b, c)) / 6;
+      for (let i = 0; i < 3; i++) {
+        const ka = key(tri[i]), kb = key(tri[(i + 1) % 3]);
+        const k = ka < kb ? ka + "|" + kb : kb + "|" + ka;
+        counts.set(k, (counts.get(k) || 0) + 1);
+      }
+    }
+    const b = bounds3(pts);
+    return {
+      triangles: triangles.length,
+      degenerateTriangles: degenerate,
+      openOrNonmanifoldEdges: [...counts.values()].filter((n) => n !== 2).length,
+      signedVolume: volume,
+      bounds: b,
+      watertightPanels: [...counts.values()].every((n) => n === 2)
+    };
+  }
+
+  function binarySTL(triangles, header) {
+    const buffer = new ArrayBuffer(84 + triangles.length * 50);
+    const bytes = new Uint8Array(buffer);
+    const label = new TextEncoder().encode((header || "FoldForge tulle hinge sheet").slice(0, 80));
+    bytes.set(label, 0);
+    const view = new DataView(buffer); view.setUint32(80, triangles.length, true);
+    let o = 84;
+    for (const tri of triangles) {
+      const n = norm3(cross3(sub3(tri[1], tri[0]), sub3(tri[2], tri[0])));
+      for (let k = 0; k < 3; k++) view.setFloat32(o + k * 4, n[k], true);
+      let p = o + 12;
+      for (const v of tri) for (let k = 0; k < 3; k++, p += 4) view.setFloat32(p, v[k], true);
+      o += 50;
+    }
+    return new Uint8Array(buffer);
+  }
+
+  function targetSTL(mesh, header) {
+    return binarySTL(mesh.faces.map((f) => f.map((v) => mesh.vertices[v])), header || "FoldForge target mesh");
+  }
+
+  function svgPattern(result) {
+    const { packed, print, assembly, options } = result;
+    const W = options.bedSize, H = options.bedSize;
+    const hingeMap = new Map();
+    for (const h of assembly.hinges) hingeMap.set(pairKey(h.parent, h.child), h);
+    const seamMap = new Map();
+    for (const s of assembly.seams) for (const f of s.faces) {
+      const k = f + ":" + edgeKey(s.a, s.b); seamMap.set(k, s.id);
+    }
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const path = (poly) => poly.map((p, i) => (i ? "L" : "M") + p[0].toFixed(3) + " " + (H - p[1]).toFixed(3)).join(" ") + " Z";
+    const lines = [];
+    lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+    lines.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + W + 'mm" height="' + H + 'mm" viewBox="0 0 ' + W + ' ' + H + '">');
+    lines.push('<style>.panel{fill:#e33;fill-opacity:.15;stroke:#222;stroke-width:.25}.m{stroke:#d22;stroke-width:.45}.v{stroke:#26c;stroke-width:.45;stroke-dasharray:2 1}.seam{stroke:#8a2be2;stroke-width:.5;stroke-dasharray:.8 .8}.id{font:2.4px sans-serif;fill:#111;text-anchor:middle}.note{font:3px sans-serif;fill:#111}</style>');
+    lines.push('<rect x="' + options.fabricMargin + '" y="' + options.fabricMargin + '" width="' + (W - 2 * options.fabricMargin) + '" height="' + (H - 2 * options.fabricMargin) + '" fill="none" stroke="#999" stroke-dasharray="2 2" stroke-width=".25"/>');
+    for (const panel of print.panels) {
+      lines.push('<path class="panel" d="' + path(panel.top) + '"/>');
+      const c = panel.top.reduce((s, p) => add2(s, p), [0, 0]).map((x) => x / 3);
+      lines.push('<text class="id" x="' + c[0].toFixed(2) + '" y="' + (H - c[1]).toFixed(2) + '">' + panel.face + '</text>');
+    }
+    for (const h of assembly.hinges) {
+      const p1 = packed.placements.get(h.parent), p2 = packed.placements.get(h.child);
+      if (!p1 || !p2) continue;
+      const a1 = p1.map.get(h.a), b1 = p1.map.get(h.b);
+      let a = a1, b = b1;
+      if (!a || !b) {
+        const common = p1.poly.filter((x) => p2.poly.some((y) => dist2(x, y) < 1e-4));
+        if (common.length >= 2) [a, b] = common;
+      }
+      if (a && b) lines.push('<line class="' + h.assignment.toLowerCase() + '" x1="' + a[0] + '" y1="' + (H - a[1]) + '" x2="' + b[0] + '" y2="' + (H - b[1]) + '"/>');
+    }
+    for (const s of assembly.seams) for (const f of s.faces) {
+      const p = packed.placements.get(f); if (!p) continue;
+      const face = result.mesh.faces[f];
+      const ia = face.indexOf(s.a), ib = face.indexOf(s.b);
+      if (ia < 0 || ib < 0) continue;
+      const a = p.poly[ia], b = p.poly[ib], mid = mul2(add2(a, b), 0.5);
+      lines.push('<line class="seam" x1="' + a[0] + '" y1="' + (H - a[1]) + '" x2="' + b[0] + '" y2="' + (H - b[1]) + '"/>');
+      lines.push('<text class="id" x="' + mid[0] + '" y="' + (H - mid[1]) + '">' + esc(s.id) + '</text>');
+    }
+    lines.push('<text class="note" x="4" y="7">M=山折り / V=谷折り / 同じS番号を最後に閉じる / 枠は印刷しない</text>');
+    lines.push('</svg>');
+    return lines.join("\n");
+  }
+
+  function foldJSON(result) {
+    const vertices = [], verticesFolded = [], faces = [], edges = [], assignments = [];
+    const hingeLookup = new Map();
+    for (const h of result.assembly.hinges) hingeLookup.set(pairKey(h.parent, h.child), h.assignment);
+    for (const [fi, p] of result.packed.placements) {
+      const face = result.mesh.faces[fi];
+      const base = vertices.length;
+      for (let i = 0; i < 3; i++) { vertices.push(p.poly[i]); verticesFolded.push(result.mesh.vertices[face[i]].map((x) => x * result.packed.scale)); }
+      faces.push([base, base + 1, base + 2]);
+      edges.push([base, base + 1], [base + 1, base + 2], [base + 2, base]);
+      assignments.push("U", "U", "U");
+    }
+    return JSON.stringify({
+      file_spec: 1.1,
+      file_creator: "FoldForge Studio " + VERSION,
+      file_title: result.name || "Converted STL",
+      file_classes: ["singleModel"], frame_classes: ["creasePattern"],
+      vertices_coords: vertices, edges_vertices: edges, edges_assignment: assignments, faces_vertices: faces,
+      file_frames: [{ frame_title: "Target faceted form", frame_classes: ["foldedForm"], vertices_coords: verticesFolded }],
+      foldforge_assembly: result.assembly
+    }, null, 2);
+  }
+
+  const DEFAULTS = Object.freeze({
+    mode: "elastic",
+    projection: "auto",
+    frontOnly: "auto",
+    frontThreshold: 0.08,
+    targetSize: 150,
+    panelLimit: 120,
+    gap: 1.0,
+    thickness: 0.8,
+    pauseHeight: 0.4,
+    gripOverhang: 0.35,
+    bedSize: 256,
+    fabricMargin: 30,
+    islandGap: 6,
+    minPanelArea: 6,
+    relaxIterations: 420,
+    chamfer: 0.85,
+    serrationAmp: 0.30,
+    serrationPitch: 6.0,
+    serrationMinEdge: 9.0,
+    trials: 48,
+    seed: 1337
+  });
+
+  function processMeshOnce(inputMesh, userOptions) {
+    const options = { ...DEFAULTS, ...(userOptions || {}) };
+    if (!(options.pauseHeight > 0 && options.pauseHeight < options.thickness)) options.pauseHeight = options.thickness / 2;
+    let mesh = orientMesh(inputMesh);
+    mesh = scaleMesh(mesh, options.targetSize);
+    mesh = simplifyMesh(mesh, options.panelLimit);
+    const topo = topology(mesh);
+    let unfolded, packed, assembly;
+    if(options.mode === "exact"){
+      unfolded = unfoldMesh(mesh, topo, options.trials, options.seed);
+      packed = packIslands(unfolded, options.bedSize, options.fabricMargin, options.islandGap);
+      assembly = assemblyData(mesh, topo, unfolded, packed, options);
+    } else {
+      unfolded = [];
+      packed = elasticLayout(mesh, topo, options);
+      assembly = elasticAssemblyData(mesh, topo, packed, options);
+    }
+    const hingeInfo = [];
+    const edgeIndexOf = (fi, va, vb) => {
+      const f = mesh.faces[fi];
+      for (let i = 0; i < f.length; i++) {
+        const x = f[i], y = f[(i + 1) % f.length];
+        if ((x === va && y === vb) || (x === vb && y === va)) return i;
+      }
+      return -1;
+    };
+    for (const h of (assembly.hinges || [])) {
+      const kind = h.assignment === "M" ? "M" : "V";
+      for (const fi of [h.parent, h.child]) {
+        if (!packed.placements.has(fi)) continue;
+        const i = edgeIndexOf(fi, h.a, h.b);
+        if (i >= 0) hingeInfo.push({ key: fi + "#" + i, kind });
+        hingeInfo.push({ key: fi + "#" + Math.min(h.a, h.b) + "-" + Math.max(h.a, h.b), kind });
+      }
+    }
+    for (const [f, pl] of packed.placements) if (!pl.meshFace && mesh.faces[f]) pl.meshFace = mesh.faces[f].slice();
+    const adjPairs = new Set();
+    for (const h of (assembly.hinges || [])) { adjPairs.add(h.parent + ":" + h.child); adjPairs.add(h.child + ":" + h.parent); }
+    const print = buildPrintMesh(packed, options, hingeInfo, adjPairs);
+    // normalise the finished plastic body to exactly targetSize in XY
+    (function () {
+      if (!print.triangles.length) return;
+      let lo = [Infinity, Infinity], hi = [-Infinity, -Infinity];
+      for (const t of print.triangles) for (const p of t) {
+        if (p[0] < lo[0]) lo[0] = p[0]; if (p[1] < lo[1]) lo[1] = p[1];
+        if (p[0] > hi[0]) hi[0] = p[0]; if (p[1] > hi[1]) hi[1] = p[1];
+      }
+      const longest = Math.max(hi[0] - lo[0], hi[1] - lo[1]);
+      if (longest < EPS) return;
+      const safe = Math.max(20, options.bedSize - 2 * options.fabricMargin);
+      const target = Math.min(options.targetSize, safe);
+      const k = target / longest;
+      const cx = (lo[0] + hi[0]) / 2, cy = (lo[1] + hi[1]) / 2;
+      const bx = options.bedSize / 2, by = options.bedSize / 2;
+      print.triangles = print.triangles.map((t) => t.map((q) => [(q[0] - cx) * k + bx, (q[1] - cy) * k + by, q[2]]));
+      print.finalScale = k;
+    })();
+    const audit = meshAudit(print.triangles);
+    const warnings = [];
+    if (topo.nonmanifoldEdges) warnings.push("非多様体辺が" + topo.nonmanifoldEdges + "本あり、その部分は自動ヒンジ化していません");
+    if (packed.scale < 0.999) warnings.push("1枚の印刷領域へ収めるため完成サイズを" + (packed.scale * 100).toFixed(1) + "%へ縮小しました");
+    if (options.mode === "exact" && packed.islands.length > topo.components.length) warnings.push("重なりを避けるため展開図を" + packed.islands.length + "島へ分割しました。S番号の縁を磁石・糸・テープで閉じます");
+    if (options.mode !== "exact") warnings.push("弾性モーフはチュールの伸びを使う近似変形です。目標STLと完全一致する剛体折りではありません");
+    if (options.mode !== "exact" && packed.frontOnly) warnings.push("閉じたSTLから投影方向の表側シェルだけを抽出しました");
+    if (mesh.faces.length > options.panelLimit * 1.15) warnings.push("形状を壊さず残すため、指定上限より多い" + mesh.faces.length + "パネルになりました");
+    if (mesh.faces.length > 220) warnings.push("パネル数が多いため、まず小型試作を推奨します");
+    if (packed.shellCount > 1) warnings.push("表面が" + packed.shellCount + "個の連結パッチに分かれています。1枚のチュールシートにできるのは最大パッチだけなので、残りは別データとして印刷してください");
+    if (packed.areaRetention != null && packed.areaRetention < 0.55) warnings.push("投影で表面積の" + Math.round((1 - packed.areaRetention) * 100) + "%が失われています。筒・巻き形状は弾性モーフではなく厳密ネット方式のほうが適切です");
+    if (print.minClearance != null && print.minClearance < 0.60) warnings.push("パネル間の最小すき間が" + print.minClearance.toFixed(2) + "mmしかありません。0.4mmノズルでは埋まる可能性があるため、パネル上限を下げるか隙間を広げてください");
+    if (print.globalExtra > 0.01) warnings.push("重なり回避のため全パネルを片側" + print.globalExtra.toFixed(2) + "mm追加で内側へ縮めました");
+    if (print.dropped && print.dropped.length) warnings.push("印刷できない大きさのパネル" + print.dropped.length + "枚を除外しました（最小面積" + (options.minPanelArea) + "mm²）。パネル上限を下げるか投影方向を変えてください");
+    if (!audit.watertightPanels) warnings.push("印刷STLのメッシュ監査で要確認箇所があります");
+    return {
+      version: VERSION,
+      name: inputMesh.name || "converted_model",
+      options,
+      mesh,
+      topology: topo,
+      unfolded,
+      packed,
+      print,
+      assembly,
+      audit,
+      clearance: print.minClearance,
+      warnings,
+      exports: {
+        printSTL: () => binarySTL(print.triangles, "FoldForge PRINT 0.8mm NO FRAME"),
+        targetSTL: () => targetSTL(mesh, "FoldForge simplified target"),
+        svg: () => "",
+        fold: () => "",
+        assembly: () => JSON.stringify(assembly, null, 2)
+      }
+    };
+  }
+
+  function processMesh(inputMesh, userOptions) {
+    // if too many panels come out below the printable size, the mesh was
+    // simplified too finely for this footprint - back off and retry.
+    const base = { ...DEFAULTS, ...(userOptions || {}) };
+    let best = processMeshOnce(inputMesh, base);
+    let limit = base.panelLimit;
+    for (let k = 0; k < 7; k++) {
+      const kept = best.print.panels.length;
+      const drop = best.print.dropped.length;
+      if (kept && (!drop || drop / Math.max(kept + drop, 1) < 0.12)) break;
+      const next = Math.max(8, Math.round((kept + drop || limit) * 0.62));
+      if (next >= limit) break;
+      limit = next;
+      const retry = processMeshOnce(inputMesh, { ...base, panelLimit: limit });
+      // keep whichever gives more usable panels
+      if (retry.print.panels.length > best.print.panels.length ||
+          (best.print.panels.length === 0 && retry.print.panels.length > 0)) {
+        best = retry;
+        best.autoPanelLimit = limit;
+      }
+      if (retry.print.panels.length && retry.print.dropped.length / Math.max(retry.print.panels.length + retry.print.dropped.length, 1) < 0.12) break;
+    }
+    if (!best.print.panels.length) best.warnings.push("この目標サイズではどのパネルも印刷可能な大きさになりません。完成サイズを大きくするか、より単純なSTLを使ってください");
+    return best;
+  }
+
+  const originalProcessMesh = processMesh;
+  processMesh = function (inputMesh, userOptions) {
+    const result = originalProcessMesh(inputMesh, userOptions);
+    result.exports.svg = () => svgPattern(result);
+    result.exports.fold = () => foldJSON(result);
+    return result;
+  };
+
+  function mergeMeshes(meshes, name) {
+    const vertices = [], faces = [];
+    for (const mesh of meshes) {
+      const off = vertices.length;
+      vertices.push(...mesh.vertices.map((v) => v.slice()));
+      faces.push(...mesh.faces.map((f) => f.map((i) => i + off)));
+    }
+    return orientMesh({ vertices, faces, name: name || "merged" });
+  }
+
+  function gridSurface(nx, ny, fn, domain, name) {
+    const [x0, x1, y0, y1] = domain || [-1, 1, -1, 1];
+    const vertices = [];
+    for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
+      const x = x0 + (x1 - x0) * i / nx, y = y0 + (y1 - y0) * j / ny;
+      const p = fn(x, y, i, j);
+      vertices.push(Array.isArray(p) ? p : [x, y, p]);
+    }
+    const faces = [];
+    const idx = (i, j) => j * (nx + 1) + i;
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      const a = idx(i, j), b = idx(i + 1, j), c = idx(i + 1, j + 1), d = idx(i, j + 1);
+      if ((i + j) % 2) faces.push([a, b, d], [b, c, d]); else faces.push([a, b, c], [a, c, d]);
+    }
+    return orientMesh({ vertices, faces, name });
+  }
+
+  function ellipsoid(center, radii, lat, lon, topOnly, name) {
+    const vertices = [], faces = [];
+    const phi0 = topOnly ? 0 : -Math.PI / 2;
+    const phi1 = Math.PI / 2;
+    for (let j = 0; j <= lat; j++) {
+      const phi = phi0 + (phi1 - phi0) * j / lat;
+      for (let i = 0; i < lon; i++) {
+        const th = TAU * i / lon;
+        vertices.push([center[0] + radii[0] * Math.cos(phi) * Math.cos(th), center[1] + radii[1] * Math.cos(phi) * Math.sin(th), center[2] + radii[2] * Math.sin(phi)]);
+      }
+    }
+    const idx = (i, j) => j * lon + (i + lon) % lon;
+    for (let j = 0; j < lat; j++) for (let i = 0; i < lon; i++) {
+      const a = idx(i, j), b = idx(i + 1, j), c = idx(i + 1, j + 1), d = idx(i, j + 1);
+      faces.push([a, b, c], [a, c, d]);
+    }
+    return orientMesh({ vertices, faces, name });
+  }
+
+  function box(center, size, name) {
+    const [cx, cy, cz] = center, [sx, sy, sz] = size.map((x) => x / 2);
+    const v = [[-sx,-sy,-sz],[sx,-sy,-sz],[sx,sy,-sz],[-sx,sy,-sz],[-sx,-sy,sz],[sx,-sy,sz],[sx,sy,sz],[-sx,sy,sz]].map((p) => add3(p, [cx,cy,cz]));
+    const f = [[0,2,1],[0,3,2],[4,5,6],[4,6,7],[0,1,5],[0,5,4],[1,2,6],[1,6,5],[2,3,7],[2,7,6],[3,0,4],[3,4,7]];
+    return orientMesh({ vertices: v, faces: f, name });
+  }
+
+  function taperedPrism(a, b, r1, r2, sides, name) {
+    const axis = norm3(sub3(b, a));
+    const helper = Math.abs(axis[2]) < 0.9 ? [0,0,1] : [1,0,0];
+    const u = norm3(cross3(axis, helper)), v = norm3(cross3(axis, u));
+    const verts = [];
+    for (let ring = 0; ring < 2; ring++) for (let i = 0; i < sides; i++) {
+      const th = TAU * i / sides, r = ring ? r2 : r1, c = ring ? b : a;
+      verts.push(add3(c, add3(mul3(u, r * Math.cos(th)), mul3(v, r * Math.sin(th)))));
+    }
+    const faces = [];
+    for (let i = 1; i + 1 < sides; i++) faces.push([0, i + 1, i], [sides, sides + i, sides + i + 1]);
+    for (let i = 0; i < sides; i++) { const j=(i+1)%sides; faces.push([i,j,sides+j],[i,sides+j,sides+i]); }
+    return orientMesh({ vertices: verts, faces, name });
+  }
+
+  function radialSurface(rings, segments, radiusFn, zFn, name) {
+    const vertices = [[0,0,zFn(0,0,0)]];
+    for (let r = 1; r <= rings; r++) for (let i = 0; i < segments; i++) {
+      const th = TAU * i / segments, t = r / rings, rr = t * radiusFn(th, t);
+      vertices.push([rr * Math.cos(th), rr * Math.sin(th), zFn(rr, th, t)]);
+    }
+    const idx = (r,i) => r === 0 ? 0 : 1 + (r - 1) * segments + (i + segments) % segments;
+    const faces = [];
+    for (let i = 0; i < segments; i++) faces.push([0,idx(1,i),idx(1,i+1)]);
+    for (let r=1;r<rings;r++) for(let i=0;i<segments;i++) faces.push([idx(r,i),idx(r+1,i),idx(r+1,i+1)],[idx(r,i),idx(r+1,i+1),idx(r,i+1)]);
+    return orientMesh({ vertices, faces, name });
+  }
+
+  function exampleCat() {
+    return radialSurface(4, 24,
+      (th) => 1 + 0.42 * Math.exp(-Math.pow((Math.atan2(Math.sin(th-Math.PI*0.30),Math.cos(th-Math.PI*0.30)))/0.16,2)) + 0.42 * Math.exp(-Math.pow((Math.atan2(Math.sin(th-Math.PI*0.70),Math.cos(th-Math.PI*0.70)))/0.16,2)),
+      (r, th, t) => 0.52*(1-t*t) + 0.22*Math.exp(-7*Math.pow(r*Math.cos(th),2)-18*Math.pow(r*Math.sin(th)+0.28,2)), "cat-mask");
+  }
+
+  function exampleFox() {
+    return radialSurface(4, 24,
+      (th) => 1 + 0.58 * Math.exp(-Math.pow((Math.atan2(Math.sin(th-Math.PI*0.28),Math.cos(th-Math.PI*0.28)))/0.12,2)) + 0.58 * Math.exp(-Math.pow((Math.atan2(Math.sin(th-Math.PI*0.72),Math.cos(th-Math.PI*0.72)))/0.12,2)),
+      (r,th,t)=>0.38*(1-t*t)+0.48*Math.exp(-12*Math.pow(r*Math.cos(th),2)-9*Math.pow(r*Math.sin(th)+0.38,2)), "fox-mask");
+  }
+
+  function exampleFuchikoma() {
+    const parts = [ellipsoid([0,0,0.5],[1.25,0.88,0.62],5,10,false,"pod"), ellipsoid([0,-0.88,0.53],[0.34,0.22,0.28],3,8,false,"eye")];
+    const anchors=[[-0.72,-0.45,0.25],[0.72,-0.45,0.25],[-0.72,0.45,0.25],[0.72,0.45,0.25]];
+    for(const p of anchors){const knee=[p[0]*1.55,p[1]*1.65,-0.15],foot=[p[0]*1.85,p[1]*2.0,-0.52];parts.push(taperedPrism(p,knee,0.14,0.11,4,"leg"),taperedPrism(knee,foot,0.11,0.08,4,"leg"));}
+    parts.push(taperedPrism([0,0.48,0.92],[0,1.08,1.2],0.09,0.05,5,"antenna"));
+    return mergeMeshes(parts,"fuchikoma-inspired-think-tank");
+  }
+
+  function exampleTurtle() { return ellipsoid([0,0,0],[1.35,1,0.55],5,14,true,"turtle-shell"); }
+  function exampleDome() { return ellipsoid([0,0,0],[1,1,1],5,14,true,"geodesic-dome"); }
+  function exampleSaddle() { return gridSurface(8,8,(x,y)=>[x,y,0.5*(x*x-y*y)],[-1,1,-1,1],"hypar-saddle"); }
+  function exampleWave() { return gridSurface(9,7,(x,y)=>[x,y,0.32*Math.sin(2.4*x+0.8*y)],[-1.5,1.5,-1,1],"wave-panel"); }
+  function exampleManta() { return gridSurface(10,6,(x,y)=>[x*(1-0.25*Math.abs(y)),y,0.3*Math.cos(1.5*x)*(1-y*y)],[-1.6,1.6,-1,1],"manta-wing"); }
+  function exampleHelmet() { return ellipsoid([0,0,0],[1,0.85,1.12],6,14,true,"helmet-shell"); }
+  function exampleBeetle() {
+    const shell=ellipsoid([0,0,0],[1.25,0.78,0.5],5,14,true,"beetle-shell");
+    for(const p of shell.vertices) p[2]+=0.14*Math.exp(-25*p[0]*p[0]);
+    return orientMesh(shell);
+  }
+  function exampleHeart() {
+    return radialSurface(4,24,(th)=>0.92*(1-0.22*Math.sin(th)+0.18*Math.cos(2*th)),(r,th,t)=>0.5*(1-t*t)+0.14*Math.sin(th)*(1-t),"heart-relief");
+  }
+  function exampleVisor() { return gridSurface(8,5,(x,y)=>[x,0.78*Math.sin(x*0.72)+y*0.15,0.45*Math.cos(x*0.72)+0.15*(1-y*y)],[-1.6,1.6,-1,1],"robot-visor"); }
+  function exampleSpiral() {
+    const vertices=[],faces=[],rings=8,seg=12;
+    for(let j=0;j<=rings;j++)for(let i=0;i<seg;i++){const th=TAU*i/seg+0.2*j,r=0.75+0.08*Math.sin(3*th);vertices.push([r*Math.cos(th),r*Math.sin(th),-1+2*j/rings]);}
+    const idx=(i,j)=>j*seg+(i+seg)%seg;for(let j=0;j<rings;j++)for(let i=0;i<seg;i++){const a=idx(i,j),b=idx(i+1,j),c=idx(i+1,j+1),d=idx(i,j+1);faces.push([a,b,c],[a,c,d]);}
+    return orientMesh({vertices,faces,name:"spiral-lantern"});
+  }
+  function exampleDragonWing() {
+    return gridSurface(10,5,(x,y)=>{const taper=1-0.28*(x+1.4)/2.8;return[x,y*taper,0.25*Math.sin(2.2*x)*(1-y*y)];},[-1.4,1.4,-1,1],"dragon-wing");
+  }
+
+  const EXAMPLES = [
+    { id:"cat", name:"猫マスク", note:"一枚皮・初心者向き", make:exampleCat },
+    { id:"fuchikoma", name:"フチコマ風・思考戦車", note:"多部品・磁石接合", make:exampleFuchikoma },
+    { id:"fox", name:"狐マスク", note:"耳と口先が大きく立つ", make:exampleFox },
+    { id:"turtle", name:"亀甲シェル", note:"写真の六角曲面に近い", make:exampleTurtle },
+    { id:"dome", name:"測地ドーム", note:"折りやすい基準作例", make:exampleDome },
+    { id:"saddle", name:"ハイパー鞍面", note:"押すと反転する曲面", make:exampleSaddle },
+    { id:"wave", name:"波パネル", note:"壁面・ランプ向き", make:exampleWave },
+    { id:"manta", name:"マンタ翼", note:"しなりのある生物形", make:exampleManta },
+    { id:"helmet", name:"ヘルメットシェル", note:"頭部曲面の試作", make:exampleHelmet },
+    { id:"beetle", name:"甲虫シェル", note:"中央稜線が強い", make:exampleBeetle },
+    { id:"heart", name:"ハートレリーフ", note:"一枚から膨らむ", make:exampleHeart },
+    { id:"visor", name:"ロボットバイザー", note:"角張った機械曲面", make:exampleVisor },
+    { id:"spiral", name:"螺旋ランタン", note:"筒状・閉じ縁あり", make:exampleSpiral },
+    { id:"dragon", name:"ドラゴン翼", note:"薄い翼面がうねる", make:exampleDragonWing }
+  ];
+
+  return {
+    VERSION, DEFAULTS, EXAMPLES,
+    parseSTL, meshFromTriangles, orientMesh, scaleMesh, simplifyMesh, topology,
+    unfoldMesh, packIslands, insetTriangle, panelSolid, processMesh,
+    binarySTL, targetSTL, svgPattern, foldJSON, meshAudit,
+    mergeMeshes, gridSurface, ellipsoid, box, taperedPrism, radialSurface,
+    math: { add2, sub2, mul2, dot2, cross2, area2, add3, sub3, mul3, dot3, cross3, bounds2, bounds3 }
+  };
+});
+
+  </script>
+  <script>
+  (function () {
+    "use strict";
+    const root = document.getElementById("foldforge-studio-root");
+    const F = globalThis.FoldForgeCore;
+    const $ = (id) => root.querySelector("#" + id);
+    const ui = {
+      example: $("ff-example"), file: $("ff-file"), mode: $("ff-mode"), size: $("ff-size"), panels: $("ff-panels"),
+      gap: $("ff-gap"), thickness: $("ff-thickness"), pause: $("ff-pause"), bed: $("ff-bed"), margin: $("ff-margin"),
+      projection: $("ff-projection"), front: $("ff-front"), trials: $("ff-trials"), run: $("ff-run"),
+      canvas: $("ff-canvas"), layout: $("ff-layout"), fold: $("ff-fold"), foldValue: $("ff-fold-value"),
+      status: $("ff-status"), warnings: $("ff-warnings"), name: $("ff-model-name"),
+      statPanels: $("ff-stat-panels"), statIslands: $("ff-stat-islands"), statSize: $("ff-stat-size"),
+      zip: $("ff-zip"), stl: $("ff-stl"), target: $("ff-target"), svg: $("ff-svg"), foldFile: $("ff-fold-file"), json: $("ff-json")
+    };
+    let sourceMesh = null, result = null, sourceName = "cat-mask";
+    let yaw = -0.55, pitch = 0.5, zoom = 1, dragging = false, last = [0,0];
+
+    for (const ex of F.EXAMPLES) {
+      const option = document.createElement("option");
+      option.value = ex.id; option.textContent = ex.name + " — " + ex.note;
+      ui.example.appendChild(option);
+    }
+
+    function options() {
+      const frontRaw = ui.front.value;
+      return {
+        mode: ui.mode.value,
+        targetSize: Number(ui.size.value), panelLimit: Number(ui.panels.value), gap: Number(ui.gap.value),
+        thickness: Number(ui.thickness.value), pauseHeight: Number(ui.pause.value), bedSize: Number(ui.bed.value),
+        fabricMargin: Number(ui.margin.value), projection: ui.projection.value,
+        frontOnly: frontRaw === "auto" ? "auto" : frontRaw === "true", trials: Number(ui.trials.value)
+      };
+    }
+
+    function setBusy(busy, message) {
+      ui.run.disabled = busy;
+      ui.run.textContent = busy ? "計算中…" : "変換する";
+      ui.status.textContent = message || "";
+    }
+
+    function enableDownloads(ok) {
+      for (const button of [ui.zip, ui.stl, ui.target, ui.svg, ui.foldFile, ui.json]) button.disabled = !ok;
+    }
+
+    function loadExample(id) {
+      const ex = F.EXAMPLES.find((x) => x.id === id) || F.EXAMPLES[0];
+      sourceMesh = ex.make(); sourceMesh.name = ex.id; sourceName = ex.id;
+      ui.name.textContent = ex.name;
+      if (id === "fuchikoma") ui.panels.value = "180";
+      else if (Number(ui.panels.value) > 150) ui.panels.value = "120";
+      run();
+    }
+
+    function run() {
+      if (!sourceMesh) return;
+      setBusy(true, "面を整理し、重なりの少ない展開を探索しています…"); enableDownloads(false);
+      setTimeout(function () {
+        try {
+          result = F.processMesh(sourceMesh, options()); result.name = sourceName;
+          renderAll(); enableDownloads(true);
+          const mode = result.options.mode === "exact" ? "厳密ネット" : "弾性モーフ";
+          ui.status.textContent = mode + "で変換完了。印刷STLは外枠なし、停止高さ" + result.options.pauseHeight.toFixed(1) + "mmです。";
+        } catch (error) {
+          console.error(error); result = null; enableDownloads(false);
+          ui.status.textContent = "変換できませんでした：" + error.message;
+        } finally { setBusy(false, ui.status.textContent); }
+      }, 30);
+    }
+
+    function renderAll() {
+      ui.statPanels.textContent = String(result.print.panels.length);
+      ui.statIslands.textContent = result.packed.islands.length + " / " + result.assembly.seams.length;
+      ui.statSize.textContent = result.assembly.summary.foldedLongestDimension.toFixed(1) + " mm";
+      ui.warnings.replaceChildren();
+      for (const warning of result.warnings) { const li = document.createElement("li"); li.textContent = warning; ui.warnings.appendChild(li); }
+      renderLayout(); draw3d();
+    }
+
+    function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+    function renderLayout() {
+      const bed = result.options.bedSize, margin = result.options.fabricMargin;
+      const path = (poly) => poly.map((p,i) => (i ? "L" : "M") + p[0].toFixed(2) + " " + (bed-p[1]).toFixed(2)).join(" ") + "Z";
+      const parts = ['<svg viewBox="0 0 '+bed+' '+bed+'" role="img" aria-label="印刷パネル配置">'];
+      parts.push('<rect class="ff-safe" x="'+margin+'" y="'+margin+'" width="'+(bed-2*margin)+'" height="'+(bed-2*margin)+'"/>');
+      for (const panel of result.print.panels) {
+        parts.push('<path class="ff-panel" d="'+path(panel.top)+'"/>');
+        if (result.print.panels.length <= 150) {
+          const c = panel.top.reduce((s,p)=>[s[0]+p[0],s[1]+p[1]],[0,0]).map((x)=>x/3);
+          parts.push('<text class="ff-id" x="'+c[0].toFixed(2)+'" y="'+(bed-c[1]).toFixed(2)+'">'+panel.face+'</text>');
+        }
+      }
+      for (const h of result.assembly.hinges) {
+        const p = result.packed.placements.get(h.parent); if (!p) continue;
+        const a=p.map.get(h.a), b=p.map.get(h.b); if(!a||!b)continue;
+        parts.push('<line class="ff-'+h.assignment.toLowerCase()+'" x1="'+a[0]+'" y1="'+(bed-a[1])+'" x2="'+b[0]+'" y2="'+(bed-b[1])+'"/>');
+      }
+      for (const s of result.assembly.seams) for (const fi of s.faces) {
+        const p=result.packed.placements.get(fi);if(!p)continue;const a=p.map.get(s.a),b=p.map.get(s.b);if(!a||!b)continue;
+        const m=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+        parts.push('<line class="ff-s" x1="'+a[0]+'" y1="'+(bed-a[1])+'" x2="'+b[0]+'" y2="'+(bed-b[1])+'"/>');
+        parts.push('<text class="ff-id" x="'+m[0]+'" y="'+(bed-m[1])+'">'+esc(s.id)+'</text>');
+      }
+      parts.push('</svg>'); ui.layout.innerHTML = parts.join("");
+    }
+
+    function canvasSize() {
+      const rect = ui.canvas.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w=Math.max(300,Math.round(rect.width*dpr)),h=Math.max(250,Math.round(rect.height*dpr));
+      if(ui.canvas.width!==w||ui.canvas.height!==h){ui.canvas.width=w;ui.canvas.height=h;}
+      return {w,h,dpr};
+    }
+    function css(name) { return getComputedStyle(root).getPropertyValue(name).trim(); }
+    function rotate(p) {
+      const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+      const x=cy*p[0]+sy*p[2], z=-sy*p[0]+cy*p[2];
+      return [x,cp*p[1]-sp*z,sp*p[1]+cp*z];
+    }
+    function draw3d() {
+      if(!result)return;const {w,h}=canvasSize(),ctx=ui.canvas.getContext("2d");ctx.clearRect(0,0,w,h);
+      const t=Number(ui.fold.value)/100, faces=[];
+      const targetScale=result.packed.scale;
+      for(const panel of result.print.panels){
+        const fi=panel.face,f=result.mesh.faces[fi],flat=result.packed.placements.get(fi).poly;
+        const pts=[];
+        for(let i=0;i<3;i++){
+          const a=[flat[i][0]-result.options.bedSize/2,flat[i][1]-result.options.bedSize/2,0];
+          const tv=result.mesh.vertices[f[i]].map((x)=>x*targetScale);
+          pts.push(rotate([a[0]*(1-t)+tv[0]*t,a[1]*(1-t)+tv[1]*t,tv[2]*t]));
+        }
+        faces.push({fi,pts,z:(pts[0][2]+pts[1][2]+pts[2][2])/3});
+      }
+      const extent=Math.max(result.options.bedSize,result.assembly.summary.foldedLongestDimension)*0.62;
+      const scale=Math.min(w,h)*zoom/Math.max(extent*2,1);
+      const project=(p)=>{const k=1/(1+p[2]/(extent*4));return[w/2+p[0]*scale*k,h/2-p[1]*scale*k];};
+      faces.sort((a,b)=>a.z-b.z);ctx.lineJoin="round";
+      for(const face of faces){const p=face.pts.map(project);ctx.beginPath();ctx.moveTo(p[0][0],p[0][1]);ctx.lineTo(p[1][0],p[1][1]);ctx.lineTo(p[2][0],p[2][1]);ctx.closePath();ctx.globalAlpha=.28;ctx.fillStyle=css("--viz-series-1")||css("--primary");ctx.fill();ctx.globalAlpha=.85;ctx.strokeStyle=css("--border");ctx.lineWidth=Math.max(1,window.devicePixelRatio||1);ctx.stroke();}
+      ctx.globalAlpha=1;
+    }
+
+    function slug() { return (sourceName || "model").replace(/[^a-zA-Z0-9_-]+/g,"_"); }
+    function download(data, name, type) {
+      const blob=data instanceof Blob?data:new Blob([data],{type:type||"application/octet-stream"});
+      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+    }
+    function textBytes(s){return new TextEncoder().encode(s);}
+    const crcTable=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+    function crc32(bytes){let c=0xffffffff;for(const b of bytes)c=crcTable[(c^b)&255]^(c>>>8);return(c^0xffffffff)>>>0;}
+    function zipStore(files){
+      const chunks=[],central=[];let offset=0;
+      const u16=(v)=>new Uint8Array([v&255,(v>>>8)&255]),u32=(v)=>new Uint8Array([v&255,(v>>>8)&255,(v>>>16)&255,(v>>>24)&255]);
+      const join=(arr)=>{const n=arr.reduce((s,x)=>s+x.length,0),o=new Uint8Array(n);let p=0;for(const x of arr){o.set(x,p);p+=x.length;}return o;};
+      for(const file of files){const name=textBytes(file.name),data=file.data instanceof Uint8Array?file.data:textBytes(file.data),crc=crc32(data);const local=join([u32(0x04034b50),u16(20),u16(0x800),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,data]);chunks.push(local);central.push(join([u32(0x02014b50),u16(20),u16(20),u16(0x800),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name]));offset+=local.length;}
+      const cd=join(central),end=join([u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(cd.length),u32(offset),u16(0)]);return join([...chunks,cd,end]);
+    }
+    function readme(){return "FoldForge Studio\n\n印刷: 0.20mm積層、"+result.options.pauseHeight.toFixed(1)+"mmで停止して15Dチュールを挟む。\n外枠はありません。ベッド端から約"+result.options.fabricMargin+"mmの布を磁石で固定します。\n方式: "+result.options.mode+"\nパネル: "+result.print.panels.length+"\n閉じ縁: "+result.assembly.seams.length+"\n";}
+
+    ui.example.addEventListener("change",()=>loadExample(ui.example.value));
+    ui.file.addEventListener("change",async()=>{const file=ui.file.files[0];if(!file)return;setBusy(true,"STLを読み込んでいます…");try{sourceMesh=F.parseSTL(await file.arrayBuffer());sourceMesh.name=file.name.replace(/\.stl$/i,"");sourceName=sourceMesh.name;ui.name.textContent=file.name;run();}catch(e){ui.status.textContent="読込失敗："+e.message;setBusy(false,ui.status.textContent);}});
+    ui.run.addEventListener("click",run);
+    ui.fold.addEventListener("input",()=>{ui.foldValue.textContent=ui.fold.value+"%";draw3d();});
+    ui.canvas.addEventListener("pointerdown",(e)=>{dragging=true;last=[e.clientX,e.clientY];ui.canvas.setPointerCapture(e.pointerId);});
+    ui.canvas.addEventListener("pointermove",(e)=>{if(!dragging)return;yaw+=(e.clientX-last[0])*.009;pitch=clampPitch(pitch+(e.clientY-last[1])*.009);last=[e.clientX,e.clientY];draw3d();});
+    ui.canvas.addEventListener("pointerup",()=>{dragging=false;});
+    ui.canvas.addEventListener("wheel",(e)=>{e.preventDefault();zoom=Math.max(.45,Math.min(2.8,zoom*Math.exp(-e.deltaY*.001)));draw3d();},{passive:false});
+    function clampPitch(x){return Math.max(-1.45,Math.min(1.45,x));}
+    window.addEventListener("resize",draw3d);
+    ui.stl.addEventListener("click",()=>download(result.exports.printSTL(),slug()+"_PRINT_0p8mm.stl","model/stl"));
+    ui.target.addEventListener("click",()=>download(result.exports.targetSTL(),slug()+"_TARGET_SIMPLIFIED.stl","model/stl"));
+    ui.svg.addEventListener("click",()=>download(result.exports.svg(),slug()+"_ASSEMBLY.svg","image/svg+xml"));
+    ui.foldFile.addEventListener("click",()=>download(result.exports.fold(),slug()+".fold","application/json"));
+    ui.json.addEventListener("click",()=>download(result.exports.assembly(),slug()+"_ASSEMBLY.json","application/json"));
+    ui.zip.addEventListener("click",()=>{const base=slug();const z=zipStore([{name:base+"_PRINT_0p8mm.stl",data:result.exports.printSTL()},{name:base+"_TARGET_SIMPLIFIED.stl",data:result.exports.targetSTL()},{name:base+"_ASSEMBLY.svg",data:result.exports.svg()},{name:base+".fold",data:result.exports.fold()},{name:base+"_ASSEMBLY.json",data:result.exports.assembly()},{name:"README_JA.txt",data:readme()}]);download(z,base+"_FoldForge.zip","application/zip");});
+
+    loadExample("cat");
+  })();
+  </script>
+</div>
+</body></html>
